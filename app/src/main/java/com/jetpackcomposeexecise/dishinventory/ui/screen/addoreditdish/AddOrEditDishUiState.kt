@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish
 
 
 data class AddOrEditDishUiState(

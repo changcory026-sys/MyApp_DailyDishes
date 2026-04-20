@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -33,7 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
+import com.jetpackcomposeexecise.dishinventory.ui.screen.adddish.AddDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.editdish.EditDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
 
 //AddDish界面

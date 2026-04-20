@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.room
+package com.jetpackcomposeexecise.dishinventory.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @Entity(tableName = "dish_table")
-data class DishItem(
+data class DishEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
+    val dishId: Long = 0L,
     val name: String = "",
     val time: Double = 0.0,
     val type: String = "小炒",

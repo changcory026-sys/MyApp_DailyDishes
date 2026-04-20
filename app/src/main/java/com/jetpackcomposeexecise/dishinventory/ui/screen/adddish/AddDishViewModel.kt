@@ -1,9 +1,10 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.adddish
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jetpackcomposeexecise.dishinventory.repository.DishRepository
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishRepository
+import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddOrEditDishUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.text.toDoubleOrNull
 
 @HiltViewModel
 class AddDishViewModel @Inject constructor(
@@ -34,7 +34,7 @@ class AddDishViewModel @Inject constructor(
     fun addDishItem(onSuccess: () -> Unit){
         viewModelScope.launch {
             repository.insert(
-                DishItem(
+                DishEntity(
                     name = _uiState.value.name,
                     time = _uiState.value.time.toDoubleOrNull() ?: 0.0,//从string转化成数字类型,
                     type = _uiState.value.type,

@@ -1,6 +1,7 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist
 
-import androidx.compose.foundation.Image
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +15,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,10 +51,25 @@ fun DishListScreen(
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     onNaviToAddDishScreen: () -> Unit
 ){
+    val dailyDishes by viewModel.allDishes.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
     Scaffold( //嵌套Scaffold，实现FloatingActionButton
         modifier = modifier,
         topBar = { CenterAlignedTopAppBar(
-            title = {Text(stringResource(R.string.title_dishes))})
+            title = {Text(stringResource(R.string.title_dishes))},
+            actions = {
+                IconButton(onClick = {
+                    // 点击时，调用我们写好的辅助函数
+                    shareDishMenu(context, dailyDishes)
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "分享今天的菜单"
+                    )
+                }
+            }
+        )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNaviToAddDishScreen) {
@@ -102,7 +120,7 @@ fun DishListEmptyScreen(modifier: Modifier) {
 
 @Composable
 fun DishListNotEmptyScreen(
-    allDishes: List<DishItem>,
+    allDishes: List<DishEntity>,
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -112,7 +130,7 @@ fun DishListNotEmptyScreen(
     ) {
         items(
             items = allDishes,
-            key = { it.id }
+            key = { it.dishId }
         ){item ->
             DishCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -127,7 +145,7 @@ fun DishListNotEmptyScreen(
 fun DishCard(
     modifier: Modifier = Modifier,
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
-    dish: DishItem
+    dish: DishEntity
 ) {
     Card(
         modifier = modifier,
@@ -135,7 +153,7 @@ fun DishCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        onClick = { onNaviToDishDetailsScreen(dish.id) }
+        onClick = { onNaviToDishDetailsScreen(dish.dishId) }
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
@@ -165,14 +183,43 @@ fun DishCard(
     }
 }
 
+//分享功能：将菜式列表转换为文字并唤起系统分享
+fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
+    // 1. 组装要分享的文字
+    val shareText = buildString {
+        append("长禾私房菜单：")
+        append("\n")
+        if (dishes.isEmpty()) {
+            append("暂无菜式，快去添加吧！")
+        } else {
+            dishes.forEach { dish ->
+                append("- ${dish.name}\n")
+            }
+        }
+    }
+
+    // 2. 创建发送 Intent
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, shareText)
+        type = "text/plain" // 告诉系统我们要分享的是纯文本
+    }
+
+    // 3. 包装成选择器 Intent（强制弹出系统的分享面板）
+    val shareIntent = Intent.createChooser(sendIntent, "分享菜单到...")
+
+    // 4. 启动分享
+    context.startActivity(shareIntent)
+}
+
 //UI测试
 @Preview(showBackground = true)
 @Composable
 fun DishListScreenPreview() {
     DishInventoryTheme {
         // 模拟数据
-        val fakeDish1 = DishItem(1, "Apple", 20.0, "中性", "中饭", "黄体期")
-        val fakeDish2 = DishItem(2, "meat", 50.0, "温补", "中饭", "黄体期")
+        val fakeDish1 = DishEntity(1, "Apple", 20.0, "中性", "中饭", "黄体期")
+        val fakeDish2 = DishEntity(2, "meat", 50.0, "温补", "中饭", "黄体期")
         val fakeDishes = listOf(fakeDish1, fakeDish2)
 
         DishListNotEmptyScreen(
@@ -199,7 +246,7 @@ fun DishCardPreview(){
         DishCard(
             modifier = Modifier.fillMaxWidth(),
             onNaviToDishDetailsScreen = {},
-            dish = DishItem(2, "韭菜炒鸡蛋", 50.0, "温补", "中饭", "黄体期")
+            dish = DishEntity(2, "韭菜炒鸡蛋", 50.0, "温补", "中饭", "黄体期")
         )
     }
 }

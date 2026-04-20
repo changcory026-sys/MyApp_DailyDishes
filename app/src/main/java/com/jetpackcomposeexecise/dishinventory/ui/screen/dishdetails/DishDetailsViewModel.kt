@@ -1,20 +1,14 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
-import com.jetpackcomposeexecise.dishinventory.repository.DishRepository
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
-import com.jetpackcomposeexecise.dishinventory.ui.navigation.DishDetailsRoute
+import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishRepository
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,7 +25,7 @@ class DishDetailsViewModel @Inject constructor(
     val uiState = dishRepository.getDishById(dishId).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DishItem(dishId, "", 0.0, "", "", "")//根据参数中的数据，创建uiState初始值
+        initialValue = DishEntity(dishId, "", 0.0, "", "", "")//根据参数中的数据，创建uiState初始值
     )//将Room中的Item装入StateFlow，这样一旦Room中的Item改变，则uiState也会随之改变，UI对应的组件会重组
 
     //3. 业务逻辑

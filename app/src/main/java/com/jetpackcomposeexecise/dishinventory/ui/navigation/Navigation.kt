@@ -24,17 +24,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.jetpackcomposeexecise.dishinventory.ui.screen.AddDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.AddDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DailyDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DailyDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DishDetailsScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DishDetailsViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DishListScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.DishListViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.EditDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.EditDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.ProfileScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDish
+import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.adddish.AddDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.DailyDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.DailyDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails.DishDetailsScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails.DishDetailsViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishListScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishListViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.EditDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.editdish.EditDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.profile.ProfileScreen
 import kotlinx.serialization.Serializable
 
 //1.定义页面 Route
@@ -51,7 +53,10 @@ object ProfileRoute
 object AddDishRoute
 
 @Serializable
-data class EditDishRoute(val dishId: Long) //数据接收页：只能传基础数据类型
+data class AddDailyDishRoute(val mealDate: String)
+
+@Serializable
+data class EditDishRoute(val dishId: Long)
 
 @Serializable
 data class DishDetailsRoute(val dishId: Long)
@@ -126,7 +131,8 @@ fun MyDailyDishApp() {
                         .fillMaxSize()
                         .padding(bottom = innerPadding.calculateBottomPadding()),
                     viewModel = viewModel,
-                    onNaviToAddDishScreen = { navController.navigate(AddDishRoute) },
+                    onNaviToAddDailyDishScreen = { mealDate ->
+                         navController.navigate(AddDailyDishRoute(mealDate)) },
                     onNaviToDishDetailsScreen = { dishId ->
                         navController.navigate(DishDetailsRoute(dishId))
                     }
@@ -154,6 +160,29 @@ fun MyDailyDishApp() {
                         .padding(bottom = innerPadding.calculateBottomPadding())
                 )
             }
+            // 新增：AddDailyDish 界面定义
+            composable<AddDailyDishRoute> {
+                val viewModel: AddDailyDishViewModel = hiltViewModel()
+                val dishes by viewModel.allDishes.collectAsStateWithLifecycle()
+
+                AddDailyDish(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    mealDate = viewModel.date,
+                    dishes = dishes,
+                    navigateUp = { navController.navigateUp() },
+                    selectedDish = viewModel.selectedDish,
+                    onDishSelected = {dish ->
+                        viewModel.onDishSelected(dish)
+                    },
+                    onSaveBtnClick = {viewModel.onSaveBtnClick(
+                        onComplete = { navController.popBackStack() }
+                    )}
+                )
+            }
+
+// ... 其他 composable 定义
             //AddDish界面：AddDish
             composable<AddDishRoute> {
                 val viewModel: AddDishViewModel = hiltViewModel()

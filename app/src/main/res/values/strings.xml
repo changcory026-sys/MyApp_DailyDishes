@@ -5,7 +5,8 @@
     <string name="title_profile">Profile</string>
     <string name="title_add_dish">Add Dish</string>
     <string name="title_edit_dish">Edit Dish</string>
-    <string name="tap_to_add_dishes">Oops!\nNo items in the inventory.\nTap + to add.</string>
+    <string name="title_add_today_dish">选个菜吧</string>
+    <string name="tap_to_add_dishes">今天吃啥？\n美食是一种享受\nTap + to add.</string>
     <string name="profile_text">This is Profile interface.\nNo content available at the moment..</string>
     <string name="mins">%.1f 分钟</string>
     <string name="dish_name">菜名*</string>

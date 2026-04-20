@@ -111,6 +111,6 @@ fun DishInventoryTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         shapes = Shapes,
-        content = content
+        content = content,
     )
 }

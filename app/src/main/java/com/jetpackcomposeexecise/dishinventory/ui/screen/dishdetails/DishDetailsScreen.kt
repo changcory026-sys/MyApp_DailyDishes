@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,14 +28,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DishDetailsScreen(
     modifier: Modifier = Modifier,
-    uiState: DishItem?,
+    uiState: DishEntity?,
     dishId: Long,
     navigateUp: () -> Unit,
     onNavToItemEditScreen: (Long) -> Unit,
@@ -97,7 +97,7 @@ fun DishDetailsScreen(
 }
 
 @Composable
-fun DishItemCard(uiState: DishItem) {
+fun DishItemCard(uiState: DishEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,

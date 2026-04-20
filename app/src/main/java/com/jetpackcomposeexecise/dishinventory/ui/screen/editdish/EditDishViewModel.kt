@@ -1,10 +1,11 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen
+package com.jetpackcomposeexecise.dishinventory.ui.screen.editdish
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jetpackcomposeexecise.dishinventory.repository.DishRepository
-import com.jetpackcomposeexecise.dishinventory.room.DishItem
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishRepository
+import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddOrEditDishUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,7 @@ class EditDishViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             //通过传递的数据，获取初始化需要的对象
-            val initialDish: DishItem? = dishRepository.getDishById(dishId).firstOrNull()
+            val initialDish: DishEntity? = dishRepository.getDishById(dishId).firstOrNull()
             //该对象不为空时初始化uiState
             initialDish?.let { initialDish ->
                 _uiState.update {
@@ -62,8 +63,8 @@ class EditDishViewModel @Inject constructor(
     fun updateDishItem(onSuccess: () -> Unit){
         viewModelScope.launch {
             dishRepository.update(
-                DishItem(
-                    id = dishId,
+                DishEntity(
+                    dishId = dishId,
                     name = _uiState.value.name,
                     time = _uiState.value.time.toDoubleOrNull() ?: 0.0,//从string转化成数字类型,
                     type = _uiState.value.type,
