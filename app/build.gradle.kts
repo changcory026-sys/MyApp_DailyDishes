@@ -79,4 +79,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     //icon
     implementation(libs.androidx.material.icons.extended)
+    // 添加 Capturable 截图库
+    implementation("dev.shreyaspatil:capturable:2.1.0")
 }

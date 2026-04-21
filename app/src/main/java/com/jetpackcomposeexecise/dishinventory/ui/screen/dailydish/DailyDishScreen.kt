@@ -3,6 +3,7 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -38,10 +40,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +57,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishCard
+import com.jetpackcomposeexecise.dishinventory.ui.utils.saveAndShareImage
+import dev.shreyaspatil.capturable.Capturable
+import dev.shreyaspatil.capturable.controller.rememberCaptureController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,68 +74,127 @@ fun DailyDishScreen(
     val selectedDate by viewModel.selectedDateText.collectAsStateWithLifecycle()
     val dailyDishes by viewModel.dailyDishes.collectAsStateWithLifecycle()
     val dateOptions by viewModel.dateOptions.collectAsStateWithLifecycle()
+    val isScreenshotLoading by viewModel.isScreenshotLoading.collectAsStateWithLifecycle()// 获取 Loading 状态
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    // 1. 初始化截图控制器
+    val captureController = rememberCaptureController()
+    // 2. 状态：标记是否处于“截图预备”模式（用于强制全量渲染列表）
+    var isPreparingForCapture by remember { mutableStateOf(false) }
 
-    Scaffold( //嵌套Scaffold1：标题文本、FloatingActionButton
-        modifier = modifier,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.title_dailydish)) },
-                actions = {
-                    IconButton(onClick = {
-                        // 点击时，调用我们写好的辅助函数
-                        shareMenu(context, selectedDate, dailyDishes)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "分享今天的菜单"
-                        )
+
+    Box(modifier = Modifier.fillMaxSize()) {// 使用最外层 Box 方便叠加 Loading 蒙层
+        Scaffold( //嵌套Scaffold1：标题文本、FloatingActionButton
+            modifier = modifier,
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text(stringResource(R.string.title_dailydish)) },
+                    actions = {
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                // 步骤 A：开启 Loading，并切换为截图模式
+                                viewModel.setScreenshotLoading(true)
+                                isPreparingForCapture = true
+
+                                // 步骤 B：给 Compose 200毫秒时间把隐藏的菜品全部绘制出来
+                                delay(200)
+
+                                // 步骤 C：执行截图！
+                                captureController.capture()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "分享今天的菜单"
+                            )
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add Item"
+                    )
+                }
+            }
+        ) { innerpadding ->
+            Scaffold(
+                //嵌套Scaffold2：顶部日期栏
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerpadding.calculateTopPadding()),
+                topBar = {
+                    MealDayBar(
+                        selectedDate = selectedDate,
+                        onYesterdayBtnClick = { viewModel.moveStepBack() },
+                        onTomorrowBtnClick = { viewModel.moveStepForward() },
+                        dateOptions = dateOptions,
+                        onDateSelected = { viewModel.onDateSelected(it) }
+                    )
+                },
+            ) { innerpadding ->
+                // ----- 核心截图区 -----
+                // 使用 Capturable 包裹我们需要生成图片的区域
+                Capturable(
+                    controller = captureController,
+                    onCaptured = { imageBitmap, error ->
+                        if (imageBitmap != null) {
+                            // 将 Compose Bitmap 转为原生 Bitmap 并分享
+                            saveAndShareImage(context, imageBitmap.asAndroidBitmap())
+                        }
+
+                        // 步骤 D：分享结束，恢复界面状态
+                        isPreparingForCapture = false
+                        viewModel.setScreenshotLoading(false)
+                    }
+                ) {
+                    // 这是最后图片生成的内容主体
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface) // 必须设置纯色底，防止截图变透明或黑底
+                            .padding(vertical = 8.dp)
+                    ) {
+                        if (dailyDishes.isEmpty()) {
+                            Log.e("DailyDishScreen", "DailyDishScreen: empty")
+                            DailyDishEmptyScreen(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(top = innerpadding.calculateTopPadding())
+                            )
+                        } else {
+                            DailyDishListScreen(
+                                allDishes = dailyDishes,
+                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(top = innerpadding.calculateTopPadding())
+                            )
+                        }
                     }
                 }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Item"
-                )
             }
         }
-    ) { innerpadding ->
-        Scaffold(
-            //嵌套Scaffold2：顶部日期栏
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerpadding.calculateTopPadding()),
-            topBar = { MealDayBar(
-                selectedDate = selectedDate,
-                onYesterdayBtnClick = { viewModel.moveStepBack() },
-                onTomorrowBtnClick = { viewModel.moveStepForward() },
-                dateOptions = dateOptions,
-                onDateSelected = {viewModel.onDateSelected(it)}
-                )},
-        ) { innerpadding ->
-
-            if (dailyDishes.isEmpty()) {
-                Log.e("DailyDishScreen", "DailyDishScreen: empty")
-                DailyDishEmptyScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = innerpadding.calculateTopPadding())
-                )
-            } else {
-                DailyDishListScreen(
-                    allDishes = dailyDishes,
-                    onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = innerpadding.calculateTopPadding())
+        // ----- 全屏 Loading 遮罩 -----
+        if (isScreenshotLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f)), // 半透明黑色背景
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(64.dp),
+                    strokeWidth = 6.dp
                 )
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,11 +204,13 @@ fun MealDayBar(
     onTomorrowBtnClick: () -> Unit,
     selectedDate: String,
     dateOptions: List<String>,
-    onDateSelected: (String)-> Unit,
-){
+    onDateSelected: (String) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -187,6 +257,7 @@ fun MealDayBar(
 
     }
 }
+
 //当日菜单界面（无数据时）
 @Composable
 fun DailyDishEmptyScreen(modifier: Modifier) {
@@ -207,6 +278,7 @@ fun DailyDishEmptyScreen(modifier: Modifier) {
         )
     }
 }
+
 //当日菜单界面（有数据时）
 @Composable
 fun DailyDishListScreen(
@@ -241,8 +313,7 @@ fun DailyDishListScreen(
     }
 }
 
-//分享功能
-// 辅助函数：将菜式列表转换为文字并唤起系统分享
+//分享文字：将菜式列表转换为文字并唤起系统分享
 fun shareMenu(context: Context, date: String, dishes: List<DishEntity>) {
     // 1. 组装要分享的文字
     val shareText = buildString {
@@ -286,8 +357,8 @@ fun MealDayBarPreview() {
         modifier = Modifier.fillMaxWidth(),
         onYesterdayBtnClick = {},
         onTomorrowBtnClick = {},
-        selectedDate ="2025-12-16",
-        dateOptions = listOf("2024-1-1","2024-1-1","2024-1-1","2024-1-1","2024-1-1",),
+        selectedDate = "2025-12-16",
+        dateOptions = listOf("2024-1-1", "2024-1-1", "2024-1-1", "2024-1-1", "2024-1-1"),
         onDateSelected = {}
     )
 }
