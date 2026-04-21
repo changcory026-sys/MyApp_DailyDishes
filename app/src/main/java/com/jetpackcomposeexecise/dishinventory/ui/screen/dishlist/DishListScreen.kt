@@ -2,6 +2,7 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -28,9 +30,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +49,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
+import com.jetpackcomposeexecise.dishinventory.ui.utils.saveAndShareImage
+import dev.shreyaspatil.capturable.Capturable
+import dev.shreyaspatil.capturable.controller.rememberCaptureController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,50 +62,96 @@ fun DishListScreen(
     viewModel: DishListViewModel = hiltViewModel(),
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     onNaviToAddDishScreen: () -> Unit
-){
-    val dailyDishes by viewModel.allDishes.collectAsStateWithLifecycle()
+) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val isScreenshotLoading by viewModel.isScreenshotLoading.collectAsStateWithLifecycle()// 获取 Loading 状态
+    // 1. 初始化截图控制器
+    val captureController = rememberCaptureController()
+    // 2. 状态：标记是否处于“截图预备”模式（用于强制全量渲染列表）
+    var isPreparingForCapture by remember { mutableStateOf(false) }
 
-    Scaffold( //嵌套Scaffold，实现FloatingActionButton
-        modifier = modifier,
-        topBar = { CenterAlignedTopAppBar(
-            title = {Text(stringResource(R.string.title_dishes))},
-            actions = {
-                IconButton(onClick = {
-                    // 点击时，调用我们写好的辅助函数
-                    shareDishMenu(context, dailyDishes)
-                }) {
+    Box(modifier = Modifier.fillMaxSize()) {// 使用最外层 Box 方便share时叠加 Loading 蒙层
+        Scaffold( //嵌套Scaffold，实现FloatingActionButton
+            modifier = modifier,
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text(stringResource(R.string.title_dishes)) },
+                    actions = {
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                viewModel.setScreenshotLoading(true)// 步骤 A：开启 Loading
+                                isPreparingForCapture = true//切换为截图模式
+                                delay(200)// 步骤 B：delay 0.2秒以绘制图片
+                                captureController.capture()// 步骤 C：执行截图！
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "分享今天的菜单"
+                            )
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(onClick = onNaviToAddDishScreen) {
                     Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "分享今天的菜单"
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add Item"
                     )
                 }
             }
-        )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNaviToAddDishScreen) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Item"
-                )
+        ) { innerpadding ->
+            // ----- 核心截图区 -----
+            // 使用 Capturable 包裹我们需要生成图片的区域
+            Capturable(
+                controller = captureController,
+                onCaptured = { imageBitmap, error ->
+                    if (imageBitmap != null) {
+                        // 将 Compose Bitmap 转为原生 Bitmap 并分享
+                        saveAndShareImage(context, imageBitmap.asAndroidBitmap())
+                    }
+
+                    // 步骤 D：分享结束，恢复界面状态
+                    isPreparingForCapture = false
+                    viewModel.setScreenshotLoading(false)
+                }
+            ) {
+                // 这是最后图片生成的内容主体
+                val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
+
+                if (allDishes.isEmpty()) {
+                    DishListEmptyScreen(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerpadding.calculateTopPadding())
+                    )
+                } else {
+                    DishListNotEmptyScreen(
+                        allDishes = allDishes,
+                        onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerpadding.calculateTopPadding())
+                    )
+                }
             }
         }
-    ) { innerpadding ->
-        val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
-
-        if (allDishes.isEmpty()){
-            DishListEmptyScreen(modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerpadding.calculateTopPadding()))
-        }else{
-            DishListNotEmptyScreen(
-                allDishes = allDishes,
-                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+        // ----- 全屏 Loading 遮罩 -----
+        if (isScreenshotLoading) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = innerpadding.calculateTopPadding())
-            )
+                    .background(Color.Black.copy(alpha = 0.4f)), // 半透明黑色背景
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(64.dp),
+                    strokeWidth = 6.dp
+                )
+            }
         }
     }
 }
@@ -103,7 +161,7 @@ fun DishListEmptyScreen(modifier: Modifier) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
-    ){
+    ) {
         Icon(
             imageVector = Icons.Filled.MenuBook,
             contentDescription = "null",
@@ -114,7 +172,7 @@ fun DishListEmptyScreen(modifier: Modifier) {
             text = stringResource(R.string.tap_to_add_dishes),
             fontSize = 24.sp,
             modifier = Modifier.padding(bottom = 300.dp)
-            )
+        )
     }
 }
 
@@ -131,7 +189,7 @@ fun DishListNotEmptyScreen(
         items(
             items = allDishes,
             key = { it.dishId }
-        ){item ->
+        ) { item ->
             DishCard(
                 modifier = Modifier.fillMaxWidth(),
                 onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
@@ -152,7 +210,8 @@ fun DishCard(
         shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
         onClick = { onNaviToDishDetailsScreen(dish.dishId) }
     ) {
         Column(
@@ -172,18 +231,18 @@ fun DishCard(
                     text = dish.medicine,
                     style = MaterialTheme.typography.bodyLarge,
 
-                )
+                    )
             }
             Text(
                 text = stringResource(R.string.mins, dish.time),
                 style = MaterialTheme.typography.bodyMedium,
 
-            )
+                )
         }
     }
 }
 
-//分享功能：将菜式列表转换为文字并唤起系统分享
+//分享文本（已改为长图）：将菜式列表转换为文字并唤起系统分享
 fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
     // 1. 组装要分享的文字
     val shareText = buildString {
@@ -225,23 +284,14 @@ fun DishListScreenPreview() {
         DishListNotEmptyScreen(
             modifier = Modifier.fillMaxSize(),
             allDishes = fakeDishes,
-            onNaviToDishDetailsScreen = {  },
+            onNaviToDishDetailsScreen = { },
         )
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun DishListEmptyScreenPreview() {
-//    DishInventoryTheme {
-//        DishListEmptyScreen(
-//            modifier = Modifier.fillMaxSize(),
-//        )
-//    }
-//}
 @Preview(showBackground = true)
 @Composable
-fun DishCardPreview(){
+fun DishCardPreview() {
     DishInventoryTheme {
         DishCard(
             modifier = Modifier.fillMaxWidth(),

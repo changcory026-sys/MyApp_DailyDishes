@@ -30,5 +30,8 @@ interface MealDateDao {
     //删：移除某天的某道菜
     @Delete
     suspend fun deleteMealDateDishCrossRef(crossRef: MealDateDishCrossRef)
+    //删：根据日期和菜品 ID 删除关联
+    @Query("DELETE FROM meal_date_dish_cross_ref WHERE mealDate = :date AND dishId = :dishId")
+    suspend fun deleteDishFromDate(date: String, dishId: Long)
 
 }

@@ -162,23 +162,11 @@ fun MyDailyDishApp() {
             }
             // 新增：AddDailyDish 界面定义
             composable<AddDailyDishRoute> {
-                val viewModel: AddDailyDishViewModel = hiltViewModel()
-                val dishes by viewModel.allDishes.collectAsStateWithLifecycle()
-
                 AddDailyDish(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = innerPadding.calculateBottomPadding()),
-                    mealDate = viewModel.date,
-                    dishes = dishes,
                     navigateUp = { navController.navigateUp() },
-                    selectedDish = viewModel.selectedDish,
-                    onDishSelected = {dish ->
-                        viewModel.onDishSelected(dish)
-                    },
-                    onSaveBtnClick = {viewModel.onSaveBtnClick(
-                        onComplete = { navController.popBackStack() }
-                    )}
                 )
             }
 

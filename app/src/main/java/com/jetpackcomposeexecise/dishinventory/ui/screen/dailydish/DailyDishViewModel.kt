@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -70,4 +71,10 @@ class DailyDishViewModel @Inject constructor(
         _selectedDate.value = _selectedDate.value.plusDays(1)
     }
 
+    //删除当天的指定菜式
+    fun deleteDishFromCurrentDate(dishId: Long) {
+        viewModelScope.launch {
+            repository.deleteDishFromDate(_selectedDate.value.toString(), dishId)
+        }
+    }
 }

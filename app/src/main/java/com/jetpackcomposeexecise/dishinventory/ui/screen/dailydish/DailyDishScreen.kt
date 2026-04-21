@@ -3,21 +3,26 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -62,6 +67,9 @@ import dev.shreyaspatil.capturable.Capturable
 import dev.shreyaspatil.capturable.controller.rememberCaptureController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.ui.draw.clip
+import com.jetpackcomposeexecise.dishinventory.ui.utils.SwipeRevealItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,6 +176,7 @@ fun DailyDishScreen(
                             DailyDishListScreen(
                                 allDishes = dailyDishes,
                                 onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                                removeDishFromCurrentDate = viewModel::deleteDishFromCurrentDate,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(top = innerpadding.calculateTopPadding())
@@ -284,6 +293,8 @@ fun DailyDishEmptyScreen(modifier: Modifier) {
 fun DailyDishListScreen(
     allDishes: List<DishEntity>,
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
+    removeDishFromCurrentDate: (dishId: Long) -> Unit,
+    viewModel: DailyDishViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(horizontal = 16.dp)) {
@@ -303,11 +314,57 @@ fun DailyDishListScreen(
             items(
                 items = allDishes,
                 key = { it.dishId }
-            ) { item ->
-                DishCard(
-                    onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                    dish = item
+            ) { dish ->
+                // 1. 定义滑动状态：只负责 UI 状态的停留和恢复，不负责删数据
+                val dismissState = rememberSwipeToDismissBoxState(
+                    // 返回 true 表示允许状态切换：
+                    // - 滑动到底时，它会停留在 EndToStart (展开状态)
+                    // - 再次向右滑时，它会回到 Settled (关闭状态)
+                    confirmValueChange = { true }
                 )
+                // 2. 滑动容器
+                SwipeRevealItem( //自定义的方法，见“SwipeRevealItem.kt”
+                    menuWidth = 64f.dp, // 严格限制最大滑动距离为 80.dp
+                    backgroundContent = { isSliding ->
+                        //滑动时才显示颜色，防止圆角透色
+                        val backgroundColor by animateColorAsState(
+                            targetValue = if (isSliding)
+                                MaterialTheme.colorScheme.errorContainer
+                            else
+                                Color.Transparent,
+                            label = "deleteBgColor"
+                        )
+
+                        //3. 右侧的删除方块按钮
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(80.dp)
+                                .background(backgroundColor, MaterialTheme.shapes.medium)
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable {
+                                    removeDishFromCurrentDate(dish.dishId)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "删除该菜式",
+                                // 搭配浅红色背景的深红色图标
+                                tint = if (backgroundColor == Color.Transparent)
+                                    Color.Transparent
+                                else
+                                    MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                ) {
+                    // 3. 正面的卡片内容
+                    DishCard(
+                        onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                        dish = dish
+                    )
+                }
             }
         }
     }
