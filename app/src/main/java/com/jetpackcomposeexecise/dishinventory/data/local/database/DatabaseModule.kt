@@ -21,8 +21,8 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "dish_database" //存储数据的表的名字，修改后会转向另一个表来存取数据，如: fruit_database
-        ).fallbackToDestructiveMigration()
+            "dish_database") //存储数据的表的名字，修改后会转向另一个表来存取数据，如: fruit_database
+            .fallbackToDestructiveMigration()
             .build()
     }
     //构建DAO

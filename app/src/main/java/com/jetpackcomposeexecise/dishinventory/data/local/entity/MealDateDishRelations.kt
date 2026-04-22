@@ -5,26 +5,45 @@ import androidx.room.Entity
 import androidx.room.Junction
 import androidx.room.Relation
 
-//把交叉表和联合查询打包类放在这一个文件里
-//因为它俩是强绑定的，总是成对出现
-
 //交叉引用表：记录哪天吃了哪道菜
 @Entity(
     tableName = "meal_date_dish_cross_ref",
-    primaryKeys = ["mealDate", "dishId"]
+    primaryKeys = ["mealDate", "dishId", "mealTime"] // 联合主键支持同菜不同餐
 )
 data class MealDateDishCrossRef(
     val mealDate: String,
-    val dishId: Long
+    val dishId: Long,
+    val mealTime: String = "中饭"
+) {
+    companion object {
+        val mealTimeOptions = listOf("早饭", "中饭", "下午茶", "晚饭", "宵夜")
+    }
+}
+
+// 包含用餐时段信息的包装类，用于 DailyDishScreen 展示
+data class DishWithMealTime(
+    @Embedded val dish: DishEntity,
+    val mealTime: String
 )
 
-//联合查询打包类（复合数据类）：用于把它们打包查询出来
+// 联合查询打包类
 data class MealDateWithDishes(
-    @Embedded val mealDate: MealDateEntity, //变量名避开关键字，不要直接叫 date
+    @Embedded val mealDate: MealDateEntity,
     @Relation(
+        entity = DishEntity::class,
         parentColumn = "mealDate",
         entityColumn = "dishId",
-        associateBy = Junction(MealDateDishCrossRef::class)
+        associateBy = Junction(
+            value = MealDateDishCrossRef::class,
+            parentColumn = "mealDate",
+            entityColumn = "dishId"
+        )
     )
-    val dishes: List<DishEntity>
+    val dishes: List<DishEntity> // 这里的 Relation 只能拿到 Dish，拿不到 CrossRef 的字段
+)
+
+// 最终给 DailyDishScreen 使用的复合类
+data class DailyDishRecord(
+    val mealDate: String,
+    val dishesWithTime: List<DishWithMealTime>
 )

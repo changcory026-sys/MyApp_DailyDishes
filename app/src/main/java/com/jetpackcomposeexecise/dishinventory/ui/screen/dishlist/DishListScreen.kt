@@ -2,7 +2,6 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,15 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,17 +31,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,10 +48,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
-import com.jetpackcomposeexecise.dishinventory.ui.utils.saveAndShareImage
-import dev.shreyaspatil.capturable.Capturable
-import dev.shreyaspatil.capturable.controller.rememberCaptureController
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,8 +61,8 @@ fun DishListScreen(
     val context = LocalContext.current
     val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
 
-    Box(modifier = Modifier.fillMaxSize()) {// 使用最外层 Box 方便share时叠加 Loading 蒙层
-        Scaffold( //嵌套Scaffold，实现FloatingActionButton
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
             modifier = modifier,
             topBar = {
                 CenterAlignedTopAppBar(
@@ -78,7 +73,7 @@ fun DishListScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "分享今天的菜单"
+                                contentDescription = "分享菜谱"
                             )
                         }
                     }
@@ -118,17 +113,19 @@ fun DishListEmptyScreen(modifier: Modifier) {
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Filled.MenuBook,
-            contentDescription = "null",
-            modifier = Modifier.size(138.dp),
-            tint = Color.LightGray,
-        )
-        Text(
-            text = stringResource(R.string.tap_to_add_dishes),
-            fontSize = 24.sp,
-            modifier = Modifier.padding(bottom = 300.dp)
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Filled.MenuBook,
+                contentDescription = null,
+                modifier = Modifier.size(138.dp),
+                tint = Color.LightGray,
+            )
+            Text(
+                text = stringResource(R.string.tap_to_add_dishes),
+                fontSize = 20.sp,
+                color = Color.Gray
+            )
+        }
     }
 }
 
@@ -138,19 +135,88 @@ fun DishListNotEmptyScreen(
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(
-            items = allDishes,
-            key = { it.dishId }
-        ) { item ->
-            DishCard(
-                modifier = Modifier.fillMaxWidth(),
-                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                dish = item
-            )
+    // 按类型分组
+    val groupedDishes = allDishes.groupBy { it.type }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    // 计算每个类型的起始索引，用于快速跳转
+    val typeToIndex = remember(allDishes) {
+        val map = mutableMapOf<String, Int>()
+        var currentIndex = 0
+        DishEntity.typeOptions.forEach { type ->
+            val dishesInType = groupedDishes[type] ?: emptyList()
+            if (dishesInType.isNotEmpty()) {
+                map[type] = currentIndex
+                currentIndex += 1 + dishesInType.size // 1个header + n个item
+            }
+        }
+        map
+    }
+
+    Column(modifier = modifier) {
+        // 顶部的分类快速导航标签
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DishEntity.typeOptions.forEach { type ->
+                // 仅显示有菜品的分类按钮
+                if (groupedDishes[type]?.isNotEmpty() == true) {
+                    item {
+                        AssistChip(
+                            onClick = {
+                                coroutineScope.launch {
+                                    typeToIndex[type]?.let { index ->
+                                        listState.animateScrollToItem(index)
+                                    }
+                                }
+                            },
+                            label = { Text(type) }
+                        )
+                    }
+                }
+            }
+        }
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 按照 DishEntity 定义的 typeOptions 顺序进行遍历
+            DishEntity.typeOptions.forEach { type ->
+                val dishesInType = groupedDishes[type] ?: emptyList()
+                
+                // 只有当该类型下有菜品时才显示标签
+                if (dishesInType.isNotEmpty()) {
+                    item(key = "header_$type") {
+                        Text(
+                            text = "---- $type ----",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 8.dp)
+                        )
+                    }
+                    
+                    items(
+                        items = dishesInType,
+                        key = { it.dishId }
+                    ) { item ->
+                        DishCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                            dish = item
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -186,73 +252,57 @@ fun DishCard(
                 Text(
                     text = dish.medicine,
                     style = MaterialTheme.typography.bodyLarge,
-
-                    )
+                )
             }
             Text(
                 text = stringResource(R.string.mins, dish.time),
                 style = MaterialTheme.typography.bodyMedium,
-
-                )
+            )
         }
     }
 }
 
-//分享文本：将菜式列表转换为文字并唤起系统分享
 fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
-    // 1. 组装要分享的文字
     val shareText = buildString {
-        append("长禾私房菜单：")
-        append("\n")
+        append("长禾私房菜单：\n\n")
         if (dishes.isEmpty()) {
             append("暂无菜式，快去添加吧！")
         } else {
-            dishes.forEach { dish ->
-                append("- ${dish.name}\n")
+            val grouped = dishes.groupBy { it.type }
+            DishEntity.typeOptions.forEach { type ->
+                val list = grouped[type] ?: emptyList()
+                if (list.isNotEmpty()) {
+                    append("【$type】\n")
+                    list.forEach { append("- ${it.name}\n") }
+                    append("\n")
+                }
             }
         }
     }
 
-    // 2. 创建发送 Intent
     val sendIntent = Intent().apply {
         action = Intent.ACTION_SEND
         putExtra(Intent.EXTRA_TEXT, shareText)
-        type = "text/plain" // 告诉系统我们要分享的是纯文本
+        type = "text/plain"
     }
 
-    // 3. 包装成选择器 Intent（强制弹出系统的分享面板）
     val shareIntent = Intent.createChooser(sendIntent, "分享菜单到...")
-
-    // 4. 启动分享
     context.startActivity(shareIntent)
 }
 
-//UI测试
 @Preview(showBackground = true)
 @Composable
 fun DishListScreenPreview() {
     DishInventoryTheme {
-        // 模拟数据
-        val fakeDish1 = DishEntity(1, "Apple", 20.0, "中性", "中饭", "黄体期")
-        val fakeDish2 = DishEntity(2, "meat", 50.0, "温补", "中饭", "黄体期")
-        val fakeDishes = listOf(fakeDish1, fakeDish2)
+        val fakeDishes = listOf(
+            DishEntity(1, "炒青菜", "10", "素菜", "平和", "全周期"),
+            DishEntity(2, "红烧肉", "60", "大荤", "温补", "黄体期")
+        )
 
         DishListNotEmptyScreen(
             modifier = Modifier.fillMaxSize(),
             allDishes = fakeDishes,
             onNaviToDishDetailsScreen = { },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DishCardPreview() {
-    DishInventoryTheme {
-        DishCard(
-            modifier = Modifier.fillMaxWidth(),
-            onNaviToDishDetailsScreen = {},
-            dish = DishEntity(2, "韭菜炒鸡蛋", 50.0, "温补", "中饭", "黄体期")
         )
     }
 }

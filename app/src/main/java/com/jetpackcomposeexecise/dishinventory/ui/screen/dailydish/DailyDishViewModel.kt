@@ -9,7 +9,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -19,18 +18,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DailyDishViewModel @Inject constructor(
-    private val repository: MealDateRepository // 注入新的 Repository
+    private val repository: MealDateRepository
 ): ViewModel() {
 
     //------- 业务属性 -------
-    //界面的uiState：此处因为只有一个属性，故直接使用
-    private val _selectedDate = MutableStateFlow(LocalDate.now())//默认值为手机当天的日期
-    // 将 LocalDate 转换为 String 供 UI 显示和数据库查询
+    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    
     val selectedDateText: StateFlow<String> = _selectedDate
-        .map { it.toString() } // 默认格式 yyyy-MM-dd
+        .map { it.toString() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LocalDate.now().toString())
 
-    // 2. 动态计算下拉框选项：当前选中的日期及前后各 3 天
     val dateOptions: StateFlow<List<String>> = _selectedDate
         .map { current ->
             (-3..3).map { offset ->
@@ -39,42 +36,36 @@ class DailyDishViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    //3. 联动数据库查询：实时显示当前的菜单
+    // 联动数据库查询：实时显示当前的菜单，按 mealTime 分组
     @OptIn(ExperimentalCoroutinesApi::class)
-    val dailyDishes: StateFlow<List<DishEntity>> = _selectedDate
-        .flatMapLatest { date ->     //flatMapLatest：一旦_selectedDate改变，则执行{}中内容
-            repository.getDishesByDate(date.toString()).map { mealDateWithDishes ->
-                mealDateWithDishes?.dishes ?: emptyList()
+    val dailyDishes: StateFlow<Map<String, List<DishEntity>>> = _selectedDate
+        .flatMapLatest { date ->
+            repository.getDishesWithMealTimeByDate(date.toString()).map { list ->
+                list.groupBy(
+                    keySelector = { it.mealTime },
+                    valueTransform = { it.dish }
+                )
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-//    //4. 控制截图时的 Loading 状态（暂时弃置）
-//    private val _isScreenshotLoading = MutableStateFlow(false)
-//    val isScreenshotLoading = _isScreenshotLoading.asStateFlow()
-//
-//    fun setScreenshotLoading(isLoading: Boolean) {
-//        _isScreenshotLoading.value = isLoading
-//    }
     //------- 业务逻辑 -------
-    //更新日期
     fun onDateSelected(newDate: String) {
         _selectedDate.value = LocalDate.parse(newDate)
     }
-    // 前一天逻辑
+
     fun moveStepBack() {
         _selectedDate.value = _selectedDate.value.minusDays(1)
     }
 
-    // 后一天逻辑
     fun moveStepForward() {
         _selectedDate.value = _selectedDate.value.plusDays(1)
     }
 
-    //删除当天的指定菜式
-    fun deleteDishFromCurrentDate(dishId: Long) {
+    // 删除当天的指定菜式（增加 mealTime 参数以精确定位）
+    fun deleteDishFromCurrentDate(dishId: Long, mealTime: String) {
         viewModelScope.launch {
-            repository.deleteDishFromDate(_selectedDate.value.toString(), dishId)
+            repository.deleteDishFromDate(_selectedDate.value.toString(), dishId, mealTime)
         }
     }
 }

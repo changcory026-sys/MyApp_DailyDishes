@@ -25,7 +25,7 @@ class DishDetailsViewModel @Inject constructor(
     val uiState = dishRepository.getDishById(dishId).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DishEntity(dishId, "", 0.0, "", "", "")//根据参数中的数据，创建uiState初始值
+        initialValue = DishEntity(dishId, "", "", "", "", "")//根据参数中的数据，创建uiState初始值
     )//将Room中的Item装入StateFlow，这样一旦Room中的Item改变，则uiState也会随之改变，UI对应的组件会重组
 
     //3. 业务逻辑

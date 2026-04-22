@@ -2,6 +2,7 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,7 +65,6 @@ fun AddDishScreen(
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,
         onMedicineChanged = viewModel::updateMedicine,
-        onDayTimeChanged = viewModel::updateDayTime,
         onWomanPeriodChanged = viewModel::updateWomanPeriod,
     )
 }
@@ -88,7 +88,6 @@ fun EditDishScreen(
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,
         onMedicineChanged = viewModel::updateMedicine,
-        onDayTimeChanged = viewModel::updateDayTime,
         onWomanPeriodChanged = viewModel::updateWomanPeriod,
     )
 }
@@ -154,7 +153,6 @@ fun AddOrEditDishContent(
     onPriceChanged: (String) -> Unit, //Price输入框的回调
     onTypeChanged: (String) -> Unit, //Type输入框的回调
     onMedicineChanged: (String) -> Unit, //Medicine输入框的回调
-    onDayTimeChanged: (String) -> Unit,
     onWomanPeriodChanged: (String) -> Unit,
 ){
     Scaffold(
@@ -203,23 +201,12 @@ fun AddOrEditDishContent(
                 )
             )
             //costTime
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = uiState.time,
-                onValueChange = {onPriceChanged(it) },
-                label = {Text(text = stringResource(R.string.dish_price))},
-                suffix = {Text(text = stringResource(R.string.price_suffix))},
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                )
+            DishDropdownField(
+                label = stringResource(R.string.dish_price),
+                options = DishEntity.timeOptions,
+                selectedOption = uiState.time,
+                onOptionSelected = onPriceChanged,
+                modifier = Modifier.fillMaxWidth()
             )
             //type
             DishDropdownField(
@@ -236,24 +223,6 @@ fun AddOrEditDishContent(
                 selectedOption = uiState.medicine,
                 onOptionSelected = onMedicineChanged,
                 modifier = Modifier.fillMaxWidth()
-            )
-            //dayTime
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = uiState.dayTime,
-                onValueChange = {onDayTimeChanged(it)},
-                label = {Text(text = stringResource(R.string.dish_day_time))},
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                )
             )
             //womamPeriod
             DishDropdownField(
@@ -300,7 +269,6 @@ fun AddOrEditDishContentPreview() {
             onPriceChanged = {  },
             onTypeChanged = {  },
             onMedicineChanged = {  },
-            onDayTimeChanged = {  },
             onWomanPeriodChanged = {  },
         )
     }

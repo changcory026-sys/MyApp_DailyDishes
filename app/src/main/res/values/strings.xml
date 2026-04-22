@@ -1,14 +1,17 @@
 <resources>
-    <string name="app_name">DishInventory</string>
+    <string name="app_name">长禾菜务</string>
     <string name="title_dailydish">每日菜单</string>
+    <string name="bottom_dailydish">每日菜单</string>
     <string name="title_dishes">菜谱</string>
+    <string name="bottom_dishes">菜谱</string>
     <string name="title_profile">个人中心</string>
+    <string name="bottom_ingredient">食材清单</string>
     <string name="title_add_dish">添加菜式</string>
     <string name="title_edit_dish">编辑菜式</string>
-    <string name="title_add_today_dish">点个菜吧^_^</string>
-    <string name="tap_to_add_dishes">今天吃啥？\n美食是一种享受\nTap + to add.</string>
-    <string name="profile_text">This is Profile interface.\nNo content available at the moment..</string>
-    <string name="mins">%.1f 分钟</string>
+    <string name="title_add_today_dish">请点菜^_^</string>
+    <string name="tap_to_add_dishes">美食是一种享受\nTap + to add.</string>
+    <string name="profile_text">这里显示食材.\n点击【+】添加</string>
+    <string name="mins">%s 分钟</string>
     <string name="dish_name">菜名*</string>
     <string name="dish_price">花费时间*</string>
     <string name="price_suffix"> 分钟</string>

@@ -11,10 +11,10 @@ import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateEntity
 // 创建&更新 entities 数组，并升级 version
 @Database(
     entities = [DishEntity::class, MealDateEntity::class, MealDateDishCrossRef::class],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun DishDao(): DishDao // v1
-    abstract fun mealDateDao(): MealDateDao // v2：暴露新的 Dao
+    abstract fun DishDao(): DishDao
+    abstract fun mealDateDao(): MealDateDao
 }

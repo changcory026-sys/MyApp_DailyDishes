@@ -130,11 +130,6 @@ fun DishItemCard(uiState: DishEntity) {
                 modifier = Modifier.fillMaxWidth()
             )
             DishInfoRow(
-                dishField = stringResource(id = R.string.dish_day_time),
-                dishFieldNum = uiState.dayTime,
-                modifier = Modifier.fillMaxWidth()
-            )
-            DishInfoRow(
                 dishField = stringResource(id = R.string.dish_womam_period),
                 dishFieldNum = uiState.womanPeriod,
                 modifier = Modifier.fillMaxWidth()

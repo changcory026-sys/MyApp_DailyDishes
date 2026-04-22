@@ -1,6 +1,7 @@
 package com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,11 +33,13 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateDishCrossRef
+
 @Composable
 fun AddDailyDish(
     modifier: Modifier = Modifier,
@@ -56,7 +59,8 @@ fun AddDailyDish(
         allDishes = allDishes,
         isSaveEnabled = isSaveEnabled,
         navigateUp = navigateUp,
-        onSearchTextChanged = viewModel::updateSearchText, // 👈 Kotlin 的方法引用语法，极其优雅
+        onMealTimeChanged = viewModel::updateMealTime,
+        onSearchTextChanged = viewModel::updateSearchText,
         onDishSelected = viewModel::onDishSelected,
         onSaveBtnClick = { viewModel.onSaveBtnClick(onComplete = navigateUp) },
     )
@@ -72,9 +76,10 @@ fun AddDailyDishScreen(
     allDishes: List<DishEntity>,     // 传入全部菜品字典
     isSaveEnabled: Boolean,          // 传入按钮是否可用
     navigateUp: () -> Unit, //顶部返回icon的回调
-    onSearchTextChanged: (rowId: String, text: String) -> Unit, // 👈 传递行ID和文字
-    onDishSelected: (rowId: String, dish: DishEntity) -> Unit,  // 👈 传递行ID和选中的菜
-    onSaveBtnClick: () -> Unit, //【Save】按钮回调viewModel.onSaveBtnClick
+    onMealTimeChanged: (rowId: String, mealTime: String) -> Unit,
+    onSearchTextChanged: (rowId: String, text: String) -> Unit,
+    onDishSelected: (rowId: String, dish: DishEntity) -> Unit,
+    onSaveBtnClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -112,15 +117,14 @@ fun AddDailyDishScreen(
                 Text(
                     text = mealDate,
                     textAlign = TextAlign.Center,
-                    //modifier = Modifier.fillMaxWidth().padding(vertical = dimensionResource(R.dimen.padding_large))
                 )
             }
-            //下拉框：选择菜单
+            //列表：选择菜品行
             items(items = inputRows, key = { it.id }) { rowState ->
                 DishInputItem(
                     state = rowState,
                     allDishes = allDishes,
-                    // 将事件向上抛出
+                    onMealTimeChanged = { mealTime -> onMealTimeChanged(rowState.id, mealTime) },
                     onSearchTextChanged = { text -> onSearchTextChanged(rowState.id, text) },
                     onDishSelected = { dish -> onDishSelected(rowState.id, dish) }
                 )
@@ -129,17 +133,18 @@ fun AddDailyDishScreen(
     }
 }
 
-// ----- 2. 独立的单行下拉框子组件 -----
+// ----- 2. 独立的单行录入组件 -----
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DishInputItem(
     state: DishInputState, // 这一行的数据状态
     allDishes: List<DishEntity>, // 全部的菜
+    onMealTimeChanged: (String) -> Unit, // 时段选择回调
     onSearchTextChanged: (String) -> Unit, // 打字回调
     onDishSelected: (DishEntity) -> Unit // 选中回调
 ) {
-    // 这两个纯 UI 状态属于当前这一行，所以放在子组件里！
-    var expanded by remember { mutableStateOf(false) }
+    var mealTimeExpanded by remember { mutableStateOf(false) }
+    var dishExpanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
 
     // 每一行自己负责过滤自己搜索的结果
@@ -151,84 +156,125 @@ fun DishInputItem(
         }
     }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
-            value = state.searchText,
-            onValueChange = {
-                onSearchTextChanged(it)
-                expanded = true
-            },
-            readOnly = false,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            placeholder = {
-                if (!isFocused && state.searchText.isEmpty()) {
-                    Text(
-                        text = "点击选择菜品",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            },
-            modifier = Modifier
-                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
-                .fillMaxWidth()
-                .onFocusChanged { focusState ->
-                    isFocused = focusState.isFocused
-                }
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+        // 1. 用餐时段选择
+        ExposedDropdownMenuBox(
+            expanded = mealTimeExpanded,
+            onExpandedChange = { mealTimeExpanded = !mealTimeExpanded },
+            modifier = Modifier.weight(0.35f)
         ) {
-            if (filteredDishes.isEmpty()) {
-                DropdownMenuItem(
-                    text = {
-                        Text("没有找到包含“${state.searchText}”的菜品", color = MaterialTheme.colorScheme.primary)
-                    },
-                    onClick = { },
-                    enabled = false
-                )
-            } else {
-                filteredDishes.forEach { dish ->
+            OutlinedTextField(
+                value = state.mealTime,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = mealTimeExpanded) },
+                modifier = Modifier
+                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = mealTimeExpanded,
+                onDismissRequest = { mealTimeExpanded = false }
+            ) {
+                MealDateDishCrossRef.mealTimeOptions.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(dish.name) },
+                        text = { Text(option) },
                         onClick = {
-                            onDishSelected(dish)
-                            expanded = false
+                            onMealTimeChanged(option)
+                            mealTimeExpanded = false
                         }
                     )
                 }
             }
         }
+
+        // 2. 菜品搜索选择
+        ExposedDropdownMenuBox(
+            expanded = dishExpanded,
+            onExpandedChange = { dishExpanded = !dishExpanded },
+            modifier = Modifier.weight(0.65f)
+        ) {
+            OutlinedTextField(
+                value = state.searchText,
+                onValueChange = {
+                    onSearchTextChanged(it)
+                    dishExpanded = true
+                },
+                readOnly = false,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dishExpanded) },
+                placeholder = {
+                    if (!isFocused && state.searchText.isEmpty()) {
+                        Text(
+                            text = "选择菜品",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        isFocused = focusState.isFocused
+                    }
+            )
+
+            ExposedDropdownMenu(
+                expanded = dishExpanded,
+                onDismissRequest = { dishExpanded = false }
+            ) {
+                if (filteredDishes.isEmpty()) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("未找到菜品", color = MaterialTheme.colorScheme.primary)
+                        },
+                        onClick = { },
+                        enabled = false
+                    )
+                } else {
+                    filteredDishes.forEach { dish ->
+                        DropdownMenuItem(
+                            text = { Text(dish.name) },
+                            onClick = {
+                                onDishSelected(dish)
+                                dishExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
+
 //UI测试
 @Preview(showBackground = true)
 @Composable
 fun AddDailyDishPreview() {
     // 构造一些假数据用于预览
     val mockDishes = listOf(
-        DishEntity(dishId = 1, name = "红烧肉", time = 38.0),
-        DishEntity(dishId = 2, name = "清炒土豆丝", time = 15.0),
-        DishEntity(dishId = 3, name = "番茄炒蛋", time = 22.0)
+        DishEntity(dishId = 1, name = "红烧肉", time = "120"),
+        DishEntity(dishId = 2, name = "清炒土豆丝", time = "15"),
+        DishEntity(dishId = 3, name = "番茄炒蛋", time = "20")
     )
 
     // 模拟屏幕上有一行已经填好，一行是默认空行
     val mockInputRows = listOf(
-        DishInputState(searchText = "红烧肉", selectedDish = mockDishes[0]),
+        DishInputState(searchText = "红烧肉", selectedDish = mockDishes[0], mealTime = "中饭"),
         DishInputState()
     )
 
-    MaterialTheme { // 记得包裹你的主题
+    MaterialTheme {
         AddDailyDishScreen(
             mealDate = "2026-04-21",
             inputRows = mockInputRows,
             allDishes = mockDishes,
             isSaveEnabled = true,
             navigateUp = {},
+            onMealTimeChanged = { _, _ -> },
             onSearchTextChanged = { _, _ -> },
             onDishSelected = { _, _ -> },
             onSaveBtnClick = {}

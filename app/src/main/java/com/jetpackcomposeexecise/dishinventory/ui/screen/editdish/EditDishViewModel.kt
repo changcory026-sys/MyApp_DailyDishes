@@ -38,10 +38,9 @@ class EditDishViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         name = initialDish.name,
-                        time = initialDish.time.toString(),
+                        time = initialDish.time,
                         type = initialDish.type,
                         medicine = initialDish.medicine,
-                        dayTime = initialDish.dayTime,
                         womanPeriod = initialDish.womanPeriod
                     )
                 }
@@ -56,7 +55,6 @@ class EditDishViewModel @Inject constructor(
     fun updatePrice(newPrice: String) { _uiState.update { it.copy(time = newPrice) } }
     fun updateType(newType: String) { _uiState.update { it.copy(type = newType) } }
     fun updateMedicine(newMedicine: String) { _uiState.update { it.copy(medicine = newMedicine) } }
-    fun updateDayTime(newDayTime: String) { _uiState.update { it.copy(dayTime = newDayTime) } }
     fun updateWomanPeriod(newWomanPeriod: String) { _uiState.update { it.copy(womanPeriod = newWomanPeriod) } }
 
     //保存回调：将uiState的值插入Room数据库（通过Repository）
@@ -66,10 +64,9 @@ class EditDishViewModel @Inject constructor(
                 DishEntity(
                     dishId = dishId,
                     name = _uiState.value.name,
-                    time = _uiState.value.time.toDoubleOrNull() ?: 0.0,//从string转化成数字类型,
+                    time = _uiState.value.time,
                     type = _uiState.value.type,
                     medicine = _uiState.value.medicine,
-                    dayTime = _uiState.value.dayTime,
                     womanPeriod = _uiState.value.womanPeriod
                 )
             )

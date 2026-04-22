@@ -31,8 +31,6 @@ interface DishDao {
     suspend fun updatePrice(id: Long, newPrice: Double)
     @Query("UPDATE dish_table SET medicine = :newMedicine WHERE dishId = :id")
     suspend fun updateMedicine(id: Long, newMedicine: String)
-    @Query("UPDATE dish_table SET dayTime = :newDayTime WHERE dishId = :id")
-    suspend fun updateDayTime(id: Long, newDayTime: String)
     @Query("UPDATE dish_table SET womanPeriod = :newWomamPeriod WHERE dishId = :id")
     suspend fun updateWomamPeriod(id: Long, newWomamPeriod: String)
 
