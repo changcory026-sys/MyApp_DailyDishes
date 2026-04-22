@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -24,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDish
 import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddDishScreen
@@ -68,16 +71,16 @@ data class BottomTabItem<T : Any>(
     val route: T
 )
 
-val bottomTabItems = listOf(
-    BottomTabItem("DailyDish", Icons.Default.Restaurant, DailyDishesRoute),
-    BottomTabItem("DishList", Icons.Default.MenuBook, DishListRoute),
-    BottomTabItem("Profile", Icons.Default.Person, ProfileRoute)
-)
-
 //3. 创建Navigation
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyDailyDishApp() {
+    //创建底部bottom
+    val bottomTabItems = listOf(
+        BottomTabItem(stringResource(R.string.bottom_dailydish), Icons.Default.Restaurant, DailyDishesRoute),
+        BottomTabItem(stringResource(R.string.bottom_dishes), Icons.Default.MenuBook, DishListRoute),
+        BottomTabItem(stringResource(R.string.bottom_ingredient), Icons.Default.ShoppingBasket, ProfileRoute)
+    )
     //创建 NavController
     val navController = rememberNavController()
     //获取当前页面信息
