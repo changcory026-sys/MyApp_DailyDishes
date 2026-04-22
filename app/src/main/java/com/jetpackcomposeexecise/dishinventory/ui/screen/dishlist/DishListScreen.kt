@@ -64,12 +64,7 @@ fun DishListScreen(
     onNaviToAddDishScreen: () -> Unit
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val isScreenshotLoading by viewModel.isScreenshotLoading.collectAsStateWithLifecycle()// 获取 Loading 状态
-    // 1. 初始化截图控制器
-    val captureController = rememberCaptureController()
-    // 2. 状态：标记是否处于“截图预备”模式（用于强制全量渲染列表）
-    var isPreparingForCapture by remember { mutableStateOf(false) }
+    val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {// 使用最外层 Box 方便share时叠加 Loading 蒙层
         Scaffold( //嵌套Scaffold，实现FloatingActionButton
@@ -79,12 +74,7 @@ fun DishListScreen(
                     title = { Text(stringResource(R.string.title_dishes)) },
                     actions = {
                         IconButton(onClick = {
-                            coroutineScope.launch {
-                                viewModel.setScreenshotLoading(true)// 步骤 A：开启 Loading
-                                isPreparingForCapture = true//切换为截图模式
-                                delay(200)// 步骤 B：delay 0.2秒以绘制图片
-                                captureController.capture()// 步骤 C：执行截图！
-                            }
+                            shareDishMenu(context, allDishes)
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -103,53 +93,19 @@ fun DishListScreen(
                 }
             }
         ) { innerpadding ->
-            // ----- 核心截图区 -----
-            // 使用 Capturable 包裹我们需要生成图片的区域
-            Capturable(
-                controller = captureController,
-                onCaptured = { imageBitmap, error ->
-                    if (imageBitmap != null) {
-                        // 将 Compose Bitmap 转为原生 Bitmap 并分享
-                        saveAndShareImage(context, imageBitmap.asAndroidBitmap())
-                    }
-
-                    // 步骤 D：分享结束，恢复界面状态
-                    isPreparingForCapture = false
-                    viewModel.setScreenshotLoading(false)
-                }
-            ) {
-                // 这是最后图片生成的内容主体
-                val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
-
-                if (allDishes.isEmpty()) {
-                    DishListEmptyScreen(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = innerpadding.calculateTopPadding())
-                    )
-                } else {
-                    DishListNotEmptyScreen(
-                        allDishes = allDishes,
-                        onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = innerpadding.calculateTopPadding())
-                    )
-                }
-            }
-        }
-        // ----- 全屏 Loading 遮罩 -----
-        if (isScreenshotLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f)), // 半透明黑色背景
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(64.dp),
-                    strokeWidth = 6.dp
+            if (allDishes.isEmpty()) {
+                DishListEmptyScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = innerpadding.calculateTopPadding())
+                )
+            } else {
+                DishListNotEmptyScreen(
+                    allDishes = allDishes,
+                    onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = innerpadding.calculateTopPadding())
                 )
             }
         }
@@ -242,7 +198,7 @@ fun DishCard(
     }
 }
 
-//分享文本（已改为长图）：将菜式列表转换为文字并唤起系统分享
+//分享文本：将菜式列表转换为文字并唤起系统分享
 fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
     // 1. 组装要分享的文字
     val shareText = buildString {

@@ -12,16 +12,23 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -32,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.screen.adddish.AddDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.editdish.EditDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
@@ -84,6 +92,55 @@ fun EditDishScreen(
         onWomanPeriodChanged = viewModel::updateWomanPeriod,
     )
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DishDropdownField(
+    label: String,
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedOption,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            modifier = Modifier
+                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
 //通用界面
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,7 +184,8 @@ fun AddOrEditDishContent(
                 dimensionResource(R.dimen.padding_large)
             )
         ) {
-            OutlinedTextField(//name
+            //name
+            OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.name,
                 onValueChange = { onNameChanged(it) },
@@ -144,7 +202,8 @@ fun AddOrEditDishContent(
                     imeAction = ImeAction.Next
                 )
             )
-            OutlinedTextField( //time
+            //costTime
+            OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.time,
                 onValueChange = {onPriceChanged(it) },
@@ -161,41 +220,24 @@ fun AddOrEditDishContent(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
                 )
-            ) //type
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = uiState.type,
-                onValueChange = {onTypeChanged(it)},
-                label = {Text(text = stringResource(R.string.dish_type))},
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                )
-            ) //type
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = uiState.medicine,
-                onValueChange = {onMedicineChanged(it)},
-                label = {Text(text = stringResource(R.string.dish_medicine))},
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                )
-            )//medicine
+            )
+            //type
+            DishDropdownField(
+                label = stringResource(R.string.dish_type),
+                options = DishEntity.typeOptions,
+                selectedOption = uiState.type,
+                onOptionSelected = onTypeChanged,
+                modifier = Modifier.fillMaxWidth()
+            )
+            //medicine
+            DishDropdownField(
+                label = stringResource(R.string.dish_medicine),
+                options = DishEntity.medicineOptions,
+                selectedOption = uiState.medicine,
+                onOptionSelected = onMedicineChanged,
+                modifier = Modifier.fillMaxWidth()
+            )
+            //dayTime
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.dayTime,
@@ -212,24 +254,16 @@ fun AddOrEditDishContent(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 )
-            ) //dayTime
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = uiState.womanPeriod,
-                onValueChange = {onWomanPeriodChanged(it)},
-                label = {Text(text = stringResource(R.string.dish_womam_period))},
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
-                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
-                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done
-                )
-            ) //womamPeriod
+            )
+            //womamPeriod
+            DishDropdownField(
+                label = stringResource(R.string.dish_womam_period),
+                options = DishEntity.womanPeriodOptions,
+                selectedOption = uiState.womanPeriod,
+                onOptionSelected = onWomanPeriodChanged,
+                modifier = Modifier.fillMaxWidth()
+            )
+            //说明文本
             Text(text = stringResource(id = R.string.required_fields))
             Spacer(modifier = Modifier.weight(1.0f))
             Button(

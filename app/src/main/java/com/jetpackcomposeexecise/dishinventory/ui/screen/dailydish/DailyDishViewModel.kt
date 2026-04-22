@@ -49,13 +49,13 @@ class DailyDishViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    //4. 控制截图时的 Loading 状态
-    private val _isScreenshotLoading = MutableStateFlow(false)
-    val isScreenshotLoading = _isScreenshotLoading.asStateFlow()
-
-    fun setScreenshotLoading(isLoading: Boolean) {
-        _isScreenshotLoading.value = isLoading
-    }
+//    //4. 控制截图时的 Loading 状态（暂时弃置）
+//    private val _isScreenshotLoading = MutableStateFlow(false)
+//    val isScreenshotLoading = _isScreenshotLoading.asStateFlow()
+//
+//    fun setScreenshotLoading(isLoading: Boolean) {
+//        _isScreenshotLoading.value = isLoading
+//    }
     //------- 业务逻辑 -------
     //更新日期
     fun onDateSelected(newDate: String) {

@@ -15,4 +15,10 @@ data class DishEntity(
     val medicine: String = "温补", //药性：温补、寒凉…
     val dayTime: String = "中饭",
     val womanPeriod: String = "黄体期",
-    )
+) {
+    companion object {
+        val typeOptions = listOf("荤菜", "小炒", "素菜", "炖菜", "蒸菜", "凉拌", "汤羹", "主食")
+        val medicineOptions = listOf("平性", "温补", "寒凉", "清热去火", "滋阴")
+        val womanPeriodOptions = listOf("全周期", "经期", "卵泡期", "排卵期", "黄体期")
+    }
+}

@@ -32,6 +32,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jetpackcomposeexecise.dishinventory.R
@@ -39,7 +40,7 @@ import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 @Composable
 fun AddDailyDish(
     modifier: Modifier = Modifier,
-    viewModel: AddDailyDishViewModel = viewModel(),
+    viewModel: AddDailyDishViewModel = hiltViewModel(),
     navigateUp: () -> Unit, //顶部返回icon的回调
 ){
     // 1. 从 ViewModel 中剥离出所有的状态流 (StateFlow)
