@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.adddailydish
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

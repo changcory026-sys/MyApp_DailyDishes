@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

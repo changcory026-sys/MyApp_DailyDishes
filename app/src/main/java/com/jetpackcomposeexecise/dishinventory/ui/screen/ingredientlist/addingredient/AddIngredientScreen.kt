@@ -1,8 +1,7 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,61 +39,61 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
-import com.jetpackcomposeexecise.dishinventory.ui.screen.adddish.AddDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.editdish.EditDishViewModel
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
 
-//AddDish界面
+// 添加食材界面
 @Composable
-fun AddDishScreen(
+fun AddIngredientScreen(
     modifier: Modifier = Modifier,
-    viewModel: AddDishViewModel = hiltViewModel(),
-    navigateUp: () -> Unit, //顶部返回icon的回调
-    onSaveBtnClick: () -> Unit, //【Save】按钮回调
-){
+    viewModel: AddIngredientViewModel = hiltViewModel(),
+    navigateUp: () -> Unit,
+    onSaveSuccess: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    AddOrEditDishContent(
+    AddIngredientContent(
         modifier = modifier,
-        title = stringResource(R.string.title_add_dish),
+        title = stringResource(R.string.title_add_ingredient),
         navigateUp = navigateUp,
         uiState = uiState,
-        onSaveBtnClick = onSaveBtnClick,
+        onSaveBtnClick = { viewModel.addIngredientItem(onSaveSuccess) },
         onNameChanged = viewModel::updateName,
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,
         onMedicineChanged = viewModel::updateMedicine,
-        onWomanPeriodChanged = viewModel::updateWomanPeriod,
+        onWomanPeriodChanged = viewModel::updateWomanPeriod
     )
 }
-//EditDish界面
+
+// 编辑食材界面
 @Composable
-fun EditDishScreen(
+fun EditIngredientScreen(
     modifier: Modifier = Modifier,
-    viewModel: EditDishViewModel = hiltViewModel(),
-    navigateUp: () -> Unit, //顶部返回icon的回调
-    onSaveBtnClick: () -> Unit, //【Save】按钮回调
-){
+    viewModel: EditIngredientViewModel = hiltViewModel(),
+    navigateUp: () -> Unit,
+    onSaveSuccess: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    AddOrEditDishContent(
+    AddIngredientContent(
         modifier = modifier,
-        title = stringResource(id = R.string.title_edit_dish),
+        title = stringResource(R.string.title_edit_ingredient),
         navigateUp = navigateUp,
         uiState = uiState,
-        onSaveBtnClick = onSaveBtnClick,
+        onSaveBtnClick = { viewModel.updateIngredientItem(onSaveSuccess) },
         onNameChanged = viewModel::updateName,
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,
         onMedicineChanged = viewModel::updateMedicine,
-        onWomanPeriodChanged = viewModel::updateWomanPeriod,
+        onWomanPeriodChanged = viewModel::updateWomanPeriod
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DishDropdownField(
+private fun IngredientDropdownField(
     label: String,
     options: List<String>,
     selectedOption: String,
@@ -140,27 +139,26 @@ private fun DishDropdownField(
     }
 }
 
-//通用界面
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddOrEditDishContent(
+fun AddIngredientContent(
     modifier: Modifier = Modifier,
-    title: String, //顶部标题文本
-    navigateUp: () -> Unit, //顶部返回icon的回调
-    uiState: AddOrEditDishUiState,
-    onSaveBtnClick: () -> Unit, //【Save】按钮回调
-    onNameChanged: (String) -> Unit, //Name输入框的回调
-    onPriceChanged: (String) -> Unit, //Price输入框的回调
-    onTypeChanged: (String) -> Unit, //Type输入框的回调
-    onMedicineChanged: (String) -> Unit, //Medicine输入框的回调
+    title: String,
+    navigateUp: () -> Unit,
+    uiState: AddIngredientUiState,
+    onSaveBtnClick: () -> Unit,
+    onNameChanged: (String) -> Unit,
+    onPriceChanged: (String) -> Unit,
+    onTypeChanged: (String) -> Unit,
+    onMedicineChanged: (String) -> Unit,
     onWomanPeriodChanged: (String) -> Unit,
-){
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(text = title) },
                 navigationIcon = {
-                    IconButton( onClick = navigateUp) {
+                    IconButton(onClick = navigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Navigate back"
@@ -169,10 +167,10 @@ fun AddOrEditDishContent(
                 }
             )
         }
-    ){innerpadding ->
+    ) { innerPadding ->
         Column(
             modifier = modifier
-                .padding(innerpadding)
+                .padding(innerPadding)
                 .padding(
                     top = dimensionResource(R.dimen.padding_large),
                     start = dimensionResource(R.dimen.padding_medium),
@@ -182,17 +180,15 @@ fun AddOrEditDishContent(
                 dimensionResource(R.dimen.padding_large)
             )
         ) {
-            //name
+            // Name
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = uiState.name,
-                onValueChange = { onNameChanged(it) },
-                label = {Text(text = stringResource(R.string.dish_name))},
+                onValueChange = onNameChanged,
+                label = { Text(text = stringResource(R.string.ingredient_name)) },
                 shape = MaterialTheme.shapes.medium,
                 colors = OutlinedTextFieldDefaults.colors(
-                    // 获取焦点时的背景色
                     focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    // 未获取焦点时的背景色
                     unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -200,76 +196,85 @@ fun AddOrEditDishContent(
                     imeAction = ImeAction.Next
                 )
             )
-            //costTime
-            DishDropdownField(
-                label = stringResource(R.string.dish_price),
-                options = DishEntity.timeOptions,
-                selectedOption = uiState.time,
-                onOptionSelected = onPriceChanged,
-                modifier = Modifier.fillMaxWidth()
+            // Price
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = uiState.price,
+                onValueChange = onPriceChanged,
+                label = { Text(text = stringResource(R.string.ingredient_price)) },
+                suffix = { Text(text = stringResource(R.string.price_suffix2)) },
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                )
             )
-            //type
-            DishDropdownField(
-                label = stringResource(R.string.dish_type),
-                options = DishEntity.typeOptions,
+            // Type
+            IngredientDropdownField(
+                label = stringResource(R.string.ingredient_type),
+                options = IngredientEntity.typeOptions,
                 selectedOption = uiState.type,
                 onOptionSelected = onTypeChanged,
                 modifier = Modifier.fillMaxWidth()
             )
-            //medicine
-            DishDropdownField(
-                label = stringResource(R.string.dish_medicine),
-                options = DishEntity.medicineOptions,
+            // Medicine
+            IngredientDropdownField(
+                label = stringResource(R.string.ingredient_medicine),
+                options = IngredientEntity.medicineOptions,
                 selectedOption = uiState.medicine,
                 onOptionSelected = onMedicineChanged,
                 modifier = Modifier.fillMaxWidth()
             )
-            //womamPeriod
-            DishDropdownField(
-                label = stringResource(R.string.dish_womam_period),
-                options = DishEntity.womanPeriodOptions,
+            // WomanPeriod
+            IngredientDropdownField(
+                label = stringResource(R.string.ingredient_womam_period),
+                options = IngredientEntity.womanPeriodOptions,
                 selectedOption = uiState.womanPeriod,
                 onOptionSelected = onWomanPeriodChanged,
                 modifier = Modifier.fillMaxWidth()
             )
-            //说明文本
+
             Text(text = stringResource(id = R.string.required_fields))
             Spacer(modifier = Modifier.weight(1.0f))
+
             Button(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                onClick = {
-                    onSaveBtnClick()
-                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                onClick = onSaveBtnClick,
                 enabled = uiState.isSaveEnabled,
                 shape = MaterialTheme.shapes.small,
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 8.dp
-                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-            ) {Text(text = stringResource(id = R.string.save_action)) }
+            ) {
+                Text(text = stringResource(id = R.string.save_action))
+            }
         }
     }
 }
 
-//UI测试
 @Preview(showBackground = true)
 @Composable
-fun AddOrEditDishContentPreview() {
+fun AddIngredientContentPreview() {
     DishInventoryTheme {
-        AddOrEditDishContent(
+        AddIngredientContent(
             modifier = Modifier.fillMaxSize(),
-            title = "Test",
-            navigateUp = {  },
-            uiState = AddOrEditDishUiState(),
-            onSaveBtnClick = {  },
-            onNameChanged = {  },
-            onPriceChanged = {  },
-            onTypeChanged = {  },
-            onMedicineChanged = {  },
-            onWomanPeriodChanged = {  },
+            title = "Add Ingredient",
+            navigateUp = {},
+            uiState = AddIngredientUiState(),
+            onSaveBtnClick = {},
+            onNameChanged = {},
+            onPriceChanged = {},
+            onTypeChanged = {},
+            onMedicineChanged = {},
+            onWomanPeriodChanged = {}
         )
     }
 }

@@ -1,10 +1,9 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.adddish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
-import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishRepository
-import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddOrEditDishUiState
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.repository.IngredientRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,34 +13,33 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AddDishViewModel @Inject constructor(
-    private val repository: DishRepository
+class AddIngredientViewModel @Inject constructor(
+    private val repository: IngredientRepository
 ) : ViewModel() {
     //--------- 业务数据 ---------
-    private val _uiState = MutableStateFlow(AddOrEditDishUiState())
-    val uiState: StateFlow<AddOrEditDishUiState> = _uiState.asStateFlow()//将StateFlow变为只读
+    private val _uiState = MutableStateFlow(AddIngredientUiState())
+    val uiState: StateFlow<AddIngredientUiState> = _uiState.asStateFlow()
 
     //--------- 业务逻辑 ---------
-    //根据输入框内容，更新uiState的值
     fun updateName(newName: String) { _uiState.update { it.copy(name = newName) } }
-    fun updatePrice(newPrice: String) { _uiState.update { it.copy(time = newPrice) } }
+    fun updatePrice(newPrice: String) { _uiState.update { it.copy(price = newPrice) } }
     fun updateType(newType: String) { _uiState.update { it.copy(type = newType) } }
     fun updateMedicine(newMedicine: String) { _uiState.update { it.copy(medicine = newMedicine) } }
     fun updateWomanPeriod(newWomanPeriod: String) { _uiState.update { it.copy(womanPeriod = newWomanPeriod) } }
 
-    //保存回调：将uiState的值插入Room数据库（通过Repository）
-    fun addDishItem(onSuccess: () -> Unit){
+    //保存回调
+    fun addIngredientItem(onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.insert(
-                DishEntity(
+                IngredientEntity(
                     name = _uiState.value.name,
-                    time = _uiState.value.time ,
+                    price = _uiState.value.price.toDoubleOrNull() ?: 0.0,
                     type = _uiState.value.type,
                     medicine = _uiState.value.medicine,
                     womanPeriod = _uiState.value.womanPeriod
                 )
             )
-            onSuccess()//成功存入数据后的回调：返回上一页
+            onSuccess()
         }
     }
 }

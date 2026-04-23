@@ -1,14 +1,12 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishRepository
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -23,12 +21,4 @@ class DishListViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-
-    //shareImage功能：控制截图时的 Loading 状态
-    private val _isScreenshotLoading = MutableStateFlow(false)
-    val isScreenshotLoading = _isScreenshotLoading.asStateFlow()
-
-    fun setScreenshotLoading(isLoading: Boolean) {
-        _isScreenshotLoading.value = isLoading
-    }
 }

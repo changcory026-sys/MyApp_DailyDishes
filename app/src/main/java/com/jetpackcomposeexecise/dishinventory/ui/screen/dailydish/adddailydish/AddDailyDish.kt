@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.adddailydish
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

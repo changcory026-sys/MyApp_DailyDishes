@@ -1,4 +1,4 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist
+package com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientlist
 
 import android.content.Context
 import android.content.Intent
@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,47 +42,45 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
-import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DishListScreen(
+fun IngredientListScreen(
     modifier: Modifier = Modifier,
-    viewModel: DishListViewModel = hiltViewModel(),
-    onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
-    onNaviToAddDishScreen: () -> Unit
+    viewModel: IngredientListViewModel = hiltViewModel(),
+    onNaviToIngredientDetailsScreen: (ingredientId: Long) -> Unit,
+    onNaviToAddIngredientScreen: () -> Unit
 ) {
     val context = LocalContext.current
-    val allDishes by viewModel.allDishes.collectAsStateWithLifecycle()
+    val allIngredients by viewModel.allIngredients.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = modifier,
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text(stringResource(R.string.title_dishes)) },
+                    title = { Text(stringResource(R.string.bottom_ingredient)) },
                     actions = {
                         IconButton(onClick = {
-                            shareDishMenu(context, allDishes)
+                            shareIngredientMenu(context, allIngredients)
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "分享菜谱"
+                                contentDescription = "分享食材"
                             )
                         }
                     }
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = onNaviToAddDishScreen) {
+                FloatingActionButton(onClick = onNaviToAddIngredientScreen) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Add Item"
@@ -88,16 +88,16 @@ fun DishListScreen(
                 }
             }
         ) { innerpadding ->
-            if (allDishes.isEmpty()) {
-                DishListEmptyScreen(
+            if (allIngredients.isEmpty()) {
+                IngredientListEmptyScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = innerpadding.calculateTopPadding())
                 )
             } else {
-                DishListNotEmptyScreen(
-                    allDishes = allDishes,
-                    onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                IngredientListNotEmptyScreen(
+                    allIngredients = allIngredients,
+                    onNaviToIngredientDetailsScreen = onNaviToIngredientDetailsScreen,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = innerpadding.calculateTopPadding())
@@ -108,20 +108,18 @@ fun DishListScreen(
 }
 
 @Composable
-fun DishListEmptyScreen(modifier: Modifier) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
+fun IngredientListEmptyScreen(modifier: Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Filled.MenuBook,
+                imageVector = Icons.Filled.ShoppingBasket,
                 contentDescription = null,
-                modifier = Modifier.size(138.dp),
                 tint = Color.LightGray,
+                modifier = Modifier.size(138.dp),
             )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.tap_to_add_dishes),
+                text = stringResource(R.string.ingredient_default_text),
                 fontSize = 20.sp,
                 color = Color.Gray
             )
@@ -130,25 +128,25 @@ fun DishListEmptyScreen(modifier: Modifier) {
 }
 
 @Composable
-fun DishListNotEmptyScreen(
-    allDishes: List<DishEntity>,
-    onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
+fun IngredientListNotEmptyScreen(
+    allIngredients: List<IngredientEntity>,
+    onNaviToIngredientDetailsScreen: (ingredientId: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // 按类型分组
-    val groupedDishes = allDishes.groupBy { it.type }
+    val groupedIngredients = allIngredients.groupBy { it.type }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     // 计算每个类型的起始索引，用于快速跳转
-    val typeToIndex = remember(allDishes) {
+    val typeToIndex = remember(allIngredients) {
         val map = mutableMapOf<String, Int>()
         var currentIndex = 0
-        DishEntity.typeOptions.forEach { type ->
-            val dishesInType = groupedDishes[type] ?: emptyList()
-            if (dishesInType.isNotEmpty()) {
+        IngredientEntity.typeOptions.forEach { type ->
+            val ingredientsInType = groupedIngredients[type] ?: emptyList()
+            if (ingredientsInType.isNotEmpty()) {
                 map[type] = currentIndex
-                currentIndex += 1 + dishesInType.size // 1个header + n个item
+                currentIndex += 1 + ingredientsInType.size // 1个header + n个item
             }
         }
         map
@@ -162,9 +160,9 @@ fun DishListNotEmptyScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            DishEntity.typeOptions.forEach { type ->
+            IngredientEntity.typeOptions.forEach { type ->
                 // 仅显示有菜品的分类按钮
-                if (groupedDishes[type]?.isNotEmpty() == true) {
+                if (groupedIngredients[type]?.isNotEmpty() == true) {
                     item {
                         AssistChip(
                             onClick = {
@@ -186,12 +184,12 @@ fun DishListNotEmptyScreen(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 按照 DishEntity 定义的 typeOptions 顺序进行遍历
-            DishEntity.typeOptions.forEach { type ->
-                val dishesInType = groupedDishes[type] ?: emptyList()
-                
+            // 按照 IngredientEntity 定义的 typeOptions 顺序进行遍历
+            IngredientEntity.typeOptions.forEach { type ->
+                val ingredientsInType = groupedIngredients[type] ?: emptyList()
+
                 // 只有当该类型下有菜品时才显示标签
-                if (dishesInType.isNotEmpty()) {
+                if (ingredientsInType.isNotEmpty()) {
                     item(key = "header_$type") {
                         Text(
                             text = "---- $type ----",
@@ -204,15 +202,15 @@ fun DishListNotEmptyScreen(
                                 .padding(top = 16.dp, bottom = 8.dp)
                         )
                     }
-                    
+
                     items(
-                        items = dishesInType,
-                        key = { it.dishId }
+                        items = ingredientsInType,
+                        key = { it.ingredientId }
                     ) { item ->
                         DishCard(
                             modifier = Modifier.fillMaxWidth(),
-                            onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                            dish = item
+                            onNaviToIngredientDetailsScreen = onNaviToIngredientDetailsScreen,
+                            ingredient = item
                         )
                     }
                 }
@@ -224,8 +222,8 @@ fun DishListNotEmptyScreen(
 @Composable
 fun DishCard(
     modifier: Modifier = Modifier,
-    onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
-    dish: DishEntity
+    onNaviToIngredientDetailsScreen: (ingredientId: Long) -> Unit,
+    ingredient: IngredientEntity
 ) {
     Card(
         modifier = modifier,
@@ -234,7 +232,7 @@ fun DishCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        onClick = { onNaviToDishDetailsScreen(dish.dishId) }
+        onClick = { onNaviToIngredientDetailsScreen(ingredient.ingredientId) }
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
@@ -245,31 +243,31 @@ fun DishCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = dish.name,
+                    text = ingredient.name,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = dish.medicine,
+                    text = ingredient.medicine,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
             Text(
-                text = stringResource(R.string.mins, dish.time),
+                text = stringResource(R.string.price, ingredient.price),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
 }
 
-fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
+fun shareIngredientMenu(context: Context, ingredients: List<IngredientEntity>) {
     val shareText = buildString {
-        append("长禾私房菜单：\n\n")
-        if (dishes.isEmpty()) {
-            append("暂无菜式，快去添加吧！")
+        append("食材清单：\n\n")
+        if (ingredients.isEmpty()) {
+            append("还没有食材，快去添加吧！")
         } else {
-            val grouped = dishes.groupBy { it.type }
-            DishEntity.typeOptions.forEach { type ->
+            val grouped = ingredients.groupBy { it.type }
+            IngredientEntity.typeOptions.forEach { type ->
                 val list = grouped[type] ?: emptyList()
                 if (list.isNotEmpty()) {
                     append("【$type】\n")
@@ -286,23 +284,8 @@ fun shareDishMenu(context: Context, dishes: List<DishEntity>) {
         type = "text/plain"
     }
 
-    val shareIntent = Intent.createChooser(sendIntent, "分享菜单到...")
+    val shareIntent = Intent.createChooser(sendIntent, "分享食材清单到...")
     context.startActivity(shareIntent)
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DishListScreenPreview() {
-    DishInventoryTheme {
-        val fakeDishes = listOf(
-            DishEntity(1, "炒青菜", "10", "素菜", "平和", "全周期"),
-            DishEntity(2, "红烧肉", "60", "大荤", "温补", "黄体期")
-        )
-
-        DishListNotEmptyScreen(
-            modifier = Modifier.fillMaxSize(),
-            allDishes = fakeDishes,
-            onNaviToDishDetailsScreen = { },
-        )
-    }
-}
+//UI测试

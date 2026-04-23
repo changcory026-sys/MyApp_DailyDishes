@@ -1,11 +1,9 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +50,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,7 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateDishCrossRef
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishCard
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist.DishCard
 import com.jetpackcomposeexecise.dishinventory.ui.utils.SwipeRevealItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -258,7 +255,7 @@ fun DailyDishEmptyScreen(modifier: Modifier) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.tap_to_add_dishes),
+                text = stringResource(R.string.daily_dishes_default_text),
                 fontSize = 20.sp,
                 color = Color.Gray
             )

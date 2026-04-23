@@ -1,10 +1,11 @@
-package com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails
+package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishdetails
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -14,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,14 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishWithIngredients
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DishDetailsScreen(
     modifier: Modifier = Modifier,
-    uiState: DishEntity?,
+    uiState: DishWithIngredients?,
     dishId: Long,
     navigateUp: () -> Unit,
     onNavToItemEditScreen: (Long) -> Unit,
@@ -67,7 +69,7 @@ fun DishDetailsScreen(
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium))
         ) {
             if (uiState != null){//确保数据库中有数据才显示
-                //水果卡片
+                //展示菜品及食材卡片
                 DishItemCard(uiState)
                 //占位控件
                 Spacer(modifier = Modifier.weight(1.0f))
@@ -90,14 +92,17 @@ fun DishDetailsScreen(
                     shape = MaterialTheme.shapes.small,
                 ) {Text(text = stringResource(id = R.string.delete)) }
             }else{
-                Text(text = stringResource(id = R.string.tap_to_add_dishes))
+                Text(text = stringResource(id = R.string.daily_dishes_default_text))
             }
         }
     }
 }
 
 @Composable
-fun DishItemCard(uiState: DishEntity) {
+fun DishItemCard(uiState: DishWithIngredients) {
+    val dish = uiState.dish
+    val ingredients = uiState.ingredients
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -111,29 +116,54 @@ fun DishItemCard(uiState: DishEntity) {
         ) {
             DishInfoRow(
                 dishField = stringResource(id = R.string.dish_name),
-                dishFieldNum = uiState.name,
+                dishFieldNum = dish.name,
                 modifier = Modifier.fillMaxWidth()
             )
             DishInfoRow(
                 dishField = stringResource(id = R.string.dish_price),
-                dishFieldNum = uiState.time.toString() + stringResource(id = R.string.price_suffix),
+                dishFieldNum = dish.time + stringResource(id = R.string.price_suffix),
                 modifier = Modifier.fillMaxWidth()
             )
             DishInfoRow(
                 dishField = stringResource(id = R.string.dish_type),
-                dishFieldNum = uiState.type,
+                dishFieldNum = dish.type,
                 modifier = Modifier.fillMaxWidth()
             )
             DishInfoRow(
                 dishField = stringResource(id = R.string.dish_medicine),
-                dishFieldNum = uiState.medicine,
+                dishFieldNum = dish.medicine,
                 modifier = Modifier.fillMaxWidth()
             )
             DishInfoRow(
                 dishField = stringResource(id = R.string.dish_womam_period),
-                dishFieldNum = uiState.womanPeriod,
+                dishFieldNum = dish.womanPeriod,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // 如果有食材，显示分割线和食材列表
+            if (ingredients.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "包含食材",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                ingredients.forEach { ingredient ->
+                    DishInfoRow(
+                        dishField = "食材",
+                        dishFieldNum = ingredient.name,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
     }
 }

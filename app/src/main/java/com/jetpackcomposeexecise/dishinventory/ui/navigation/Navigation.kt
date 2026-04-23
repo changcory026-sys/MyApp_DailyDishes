@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,19 +26,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.jetpackcomposeexecise.dishinventory.R
-import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDish
-import com.jetpackcomposeexecise.dishinventory.ui.screen.adddailydish.AddDailyDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.AddDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.adddish.AddDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.DailyDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.DailyDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails.DishDetailsScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishdetails.DishDetailsViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishListScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.DishListViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.addoreditdish.EditDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.editdish.EditDishViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.profile.ProfileScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.adddailydish.AddDailyDish
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish.AddDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.adddish.AddDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish.DailyDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishdetails.DishDetailsScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishdetails.DishDetailsViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist.DishListScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish.EditDishScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.editdish.EditDishViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient.AddIngredientScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient.AddIngredientViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientdetails.IngredientDetailsScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientdetails.IngredientDetailsViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientlist.IngredientListScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
 import kotlinx.serialization.Serializable
 
 //1.定义页面 Route
@@ -50,7 +52,7 @@ object DailyDishesRoute
 object DishListRoute
 
 @Serializable
-object ProfileRoute
+object IngredientListRoute
 
 @Serializable
 object AddDishRoute
@@ -64,6 +66,15 @@ data class EditDishRoute(val dishId: Long)
 @Serializable
 data class DishDetailsRoute(val dishId: Long)
 
+@Serializable
+object AddIngredientRoute
+
+@Serializable
+data class EditIngredientRoute(val ingredientId: Long) // 👈 修正参数名为 ingredientId
+
+@Serializable
+data class IngredientDetailsRoute(val ingredientId: Long)
+
 //2. 定义主页底部Tab的数据结构
 data class BottomTabItem<T : Any>(
     val title: String,
@@ -75,45 +86,49 @@ data class BottomTabItem<T : Any>(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyDailyDishApp() {
-    //创建底部bottom
     val bottomTabItems = listOf(
-        BottomTabItem(stringResource(R.string.bottom_dailydish), Icons.Default.Restaurant, DailyDishesRoute),
-        BottomTabItem(stringResource(R.string.bottom_dishes), Icons.Default.MenuBook, DishListRoute),
-        BottomTabItem(stringResource(R.string.bottom_ingredient), Icons.Default.ShoppingBasket, ProfileRoute)
+        BottomTabItem(
+            stringResource(R.string.bottom_dailydish),
+            Icons.Default.Restaurant,
+            DailyDishesRoute
+        ),
+        BottomTabItem(
+            stringResource(R.string.bottom_dishes),
+            Icons.Default.MenuBook,
+            DishListRoute
+        ),
+        BottomTabItem(
+            stringResource(R.string.bottom_ingredient),
+            Icons.Default.ShoppingBasket,
+            IngredientListRoute
+        )
     )
-    //创建 NavController
     val navController = rememberNavController()
-    //获取当前页面信息
-    val navBackStackEntry by navController.currentBackStackEntryAsState()//监听当前界面
-    val currentDestination = navBackStackEntry?.destination //获取当前页面所有信息
-    //当前页面是否显示BottomBar
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
     val showBottomBar =
         currentDestination?.hasRoute(DailyDishesRoute::class) ?: false ||
                 currentDestination?.hasRoute(DishListRoute::class) ?: false ||
-                currentDestination?.hasRoute(ProfileRoute::class) ?: false
-    //当前页面是否可以返回
-    //val canNavigateBack = navController.previousBackStackEntry != null
+                currentDestination?.hasRoute(IngredientListRoute::class) ?: false
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (showBottomBar) { //是否显示BottomBar
+            if (showBottomBar) {
                 NavigationBar {
                     bottomTabItems.forEach { item ->
-                        val isSelected =  //当前tab是否被选中
-                            currentDestination?.hasRoute(item.route::class) ?: false
-                        NavigationBarItem( //定义BottomBar中的每个Tab
+                        val isSelected = currentDestination?.hasRoute(item.route::class) ?: false
+                        NavigationBarItem(
                             selected = isSelected,
                             icon = { Icon(item.icon, contentDescription = item.title) },
                             label = { Text(text = item.title) },
-                            onClick = { //点击后跳转
+                            onClick = {
                                 navController.navigate(item.route) {
-                                    //配置1：清空返回栈起始页外的界面，防止堆叠
                                     popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true //保存当前页状态
+                                        saveState = true
                                     }
-                                    launchSingleTop = true //配置2：防止重复点击
-                                    restoreState = true //配置3：从其他页返回后恢复状态
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             }
                         )
@@ -126,44 +141,57 @@ fun MyDailyDishApp() {
             navController = navController,
             startDestination = DailyDishesRoute
         ) {
-            //Home界面：DailyDishes
+            // DailyDishes
             composable<DailyDishesRoute> {
-                val viewModel: DailyDishViewModel = hiltViewModel()
                 DailyDishScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = innerPadding.calculateBottomPadding()),
-                    viewModel = viewModel,
                     onNaviToAddDailyDishScreen = { mealDate ->
-                         navController.navigate(AddDailyDishRoute(mealDate)) },
+                        navController.navigate(
+                            AddDailyDishRoute(mealDate)
+                        )
+                    },
                     onNaviToDishDetailsScreen = { dishId ->
-                        navController.navigate(DishDetailsRoute(dishId))
+                        navController.navigate(
+                            DishDetailsRoute(
+                                dishId
+                            )
+                        )
                     }
                 )
             }
-            //Dishes界面：DishList
+            // DishList
             composable<DishListRoute> {
-                val viewModel: DishListViewModel = hiltViewModel()
                 DishListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = innerPadding.calculateBottomPadding()),
-                    viewModel = viewModel,
                     onNaviToAddDishScreen = { navController.navigate(AddDishRoute) },
                     onNaviToDishDetailsScreen = { dishId ->
-                        navController.navigate(DishDetailsRoute(dishId))
+                        navController.navigate(
+                            DishDetailsRoute(
+                                dishId
+                            )
+                        )
                     }
                 )
             }
-            //Profile界面：Profile
-            composable<ProfileRoute> {
-                ProfileScreen(
+            // IngredientList
+            composable<IngredientListRoute> {
+                IngredientListScreen(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding())
+                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    onNaviToAddIngredientScreen = { navController.navigate(AddIngredientRoute) },
+                    onNaviToIngredientDetailsScreen = { ingredientId ->
+                        navController.navigate(
+                            IngredientDetailsRoute(ingredientId)
+                        )
+                    }
                 )
             }
-            // 新增：AddDailyDish 界面定义
+            // AddDailyDish
             composable<AddDailyDishRoute> {
                 AddDailyDish(
                     modifier = Modifier
@@ -172,43 +200,34 @@ fun MyDailyDishApp() {
                     navigateUp = { navController.navigateUp() },
                 )
             }
-
-// ... 其他 composable 定义
-            //AddDish界面：AddDish
+            // AddDish
             composable<AddDishRoute> {
                 val viewModel: AddDishViewModel = hiltViewModel()
-
                 AddDishScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
                     viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
-                    onSaveBtnClick = { viewModel::addDishItem { navController.popBackStack() } }
+                    onSaveBtnClick = { viewModel.addDishItem { navController.popBackStack() } }
                 )
             }
-            //DishDetails界面：DishDetails
+            // DishDetails
             composable<DishDetailsRoute> {
                 val viewModel: DishDetailsViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val dishId = viewModel.dishId
-
                 DishDetailsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
                     uiState = uiState,
-                    dishId = dishId,
+                    dishId = viewModel.dishId,
                     navigateUp = { navController.navigateUp() },
-                    onNavToItemEditScreen = { dishId ->
-                        navController.navigate(EditDishRoute(dishId))
-                    },
-                    onDeleteBtnClick = {
-                        viewModel::deleteDish{ navController.popBackStack() }
-                    }
+                    onNavToItemEditScreen = { dishId -> navController.navigate(EditDishRoute(dishId)) },
+                    onDeleteBtnClick = { viewModel.deleteDish { navController.popBackStack() } }
                 )
             }
-            //EditDish界面：EditDish
+            // EditDish
             composable<EditDishRoute> {
                 val viewModel: EditDishViewModel = hiltViewModel()
                 EditDishScreen(
@@ -217,10 +236,41 @@ fun MyDailyDishApp() {
                         .padding(innerPadding),
                     viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
-                    onSaveBtnClick = { viewModel::updateDishItem { navController.popBackStack() } }
+                    onSaveBtnClick = { viewModel.updateDishItem { navController.popBackStack() } }
+                )
+            }
+            // AddIngredient
+            composable<AddIngredientRoute> {
+                val viewModel: AddIngredientViewModel = hiltViewModel()
+                AddIngredientScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = viewModel,
+                    navigateUp = { navController.navigateUp() },
+                    onSaveSuccess = { navController.popBackStack() }
+                )
+            }
+            // IngredientDetails
+            composable<IngredientDetailsRoute> {
+                val viewModel: IngredientDetailsViewModel = hiltViewModel()
+                IngredientDetailsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = viewModel,
+                    navigateUp = { navController.navigateUp() },
+                    onNavToIngredientEditScreen = { ingredientId ->
+                        navController.navigate(EditIngredientRoute(ingredientId))
+                    }
+                )
+            }
+            // EditIngredient 👈 新增：注册食材编辑页
+            composable<EditIngredientRoute> {
+                val viewModel: EditIngredientViewModel = hiltViewModel()
+                EditIngredientScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = viewModel,
+                    navigateUp = { navController.navigateUp() },
+                    onSaveSuccess = { navController.popBackStack() }
                 )
             }
         }
     }
-
 }

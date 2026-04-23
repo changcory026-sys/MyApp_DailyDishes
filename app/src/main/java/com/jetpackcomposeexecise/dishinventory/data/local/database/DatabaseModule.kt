@@ -2,6 +2,7 @@ package com.jetpackcomposeexecise.dishinventory.data.local.database
 
 import android.content.Context
 import androidx.room.Room
+import com.jetpackcomposeexecise.dishinventory.data.local.dao.IngredientDao
 import com.jetpackcomposeexecise.dishinventory.data.local.dao.MealDateDao
 import dagger.Module
 import dagger.Provides
@@ -32,5 +33,10 @@ object DatabaseModule {
     @Provides
     fun provideMealDateDao(database: AppDatabase): MealDateDao {
         return database.mealDateDao()
+    }
+
+    @Provides
+    fun provideIngredientDao(database: AppDatabase): IngredientDao {
+        return database.ingredientDao()
     }
 }
