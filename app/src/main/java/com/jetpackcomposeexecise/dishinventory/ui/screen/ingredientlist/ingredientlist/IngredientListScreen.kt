@@ -2,6 +2,8 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredi
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
+import com.jetpackcomposeexecise.dishinventory.ui.utils.getIngredientTypeEmoji
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,6 +130,7 @@ fun IngredientListEmptyScreen(modifier: Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IngredientListNotEmptyScreen(
     allIngredients: List<IngredientEntity>,
@@ -161,7 +165,6 @@ fun IngredientListNotEmptyScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IngredientEntity.typeOptions.forEach { type ->
-                // 仅显示有菜品的分类按钮
                 if (groupedIngredients[type]?.isNotEmpty() == true) {
                     item {
                         AssistChip(
@@ -172,7 +175,7 @@ fun IngredientListNotEmptyScreen(
                                     }
                                 }
                             },
-                            label = { Text(type) }
+                            label = { Text(type) } // 👈 保持纯文本
                         )
                     }
                 }
@@ -184,23 +187,28 @@ fun IngredientListNotEmptyScreen(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 按照 IngredientEntity 定义的 typeOptions 顺序进行遍历
             IngredientEntity.typeOptions.forEach { type ->
                 val ingredientsInType = groupedIngredients[type] ?: emptyList()
 
-                // 只有当该类型下有菜品时才显示标签
                 if (ingredientsInType.isNotEmpty()) {
-                    item(key = "header_$type") {
-                        Text(
-                            text = "---- $type ----",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
+                    // 使用 stickyHeader 实现吸附效果
+                    stickyHeader(key = "header_$type") {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 16.dp, bottom = 8.dp)
-                        )
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(
+                                // 👈 仅在此处文本前显示 Emoji
+                                text = "---- ${getIngredientTypeEmoji(type)} $type (${ingredientsInType.size}) ----",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
 
                     items(
@@ -243,17 +251,17 @@ fun DishCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = ingredient.name,
+                    text = ingredient.name, // 👈 保持纯文本
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = ingredient.medicine,
+                    text = ingredient.medicine, // 👈 保持纯文本
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
             Text(
-                text = stringResource(R.string.price, ingredient.price),
+                text = stringResource(R.string.price, ingredient.price), // 👈 保持纯文本
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -270,7 +278,7 @@ fun shareIngredientMenu(context: Context, ingredients: List<IngredientEntity>) {
             IngredientEntity.typeOptions.forEach { type ->
                 val list = grouped[type] ?: emptyList()
                 if (list.isNotEmpty()) {
-                    append("【$type】\n")
+                    append("【$type】\n") // 👈 保持纯文本
                     list.forEach { append("- ${it.name}\n") }
                     append("\n")
                 }
@@ -287,5 +295,3 @@ fun shareIngredientMenu(context: Context, ingredients: List<IngredientEntity>) {
     val shareIntent = Intent.createChooser(sendIntent, "分享食材清单到...")
     context.startActivity(shareIntent)
 }
-
-//UI测试

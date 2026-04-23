@@ -2,6 +2,8 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
+import com.jetpackcomposeexecise.dishinventory.ui.utils.getDishTypeEmoji
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,6 +132,7 @@ fun DishListEmptyScreen(modifier: Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DishListNotEmptyScreen(
     allDishes: List<DishEntity>,
@@ -192,17 +196,24 @@ fun DishListNotEmptyScreen(
                 
                 // 只有当该类型下有菜品时才显示标签
                 if (dishesInType.isNotEmpty()) {
-                    item(key = "header_$type") {
-                        Text(
-                            text = "---- $type ----",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
+                    // 使用 stickyHeader 实现粘性标题功能
+                    stickyHeader(key = "header_$type") {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 16.dp, bottom = 8.dp)
-                        )
+                                .background(MaterialTheme.colorScheme.background) // 添加背景色防止透视
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(
+                                // 👈 仅在此处文本前显示 Emoji，并包含数量统计
+                                text = "---- ${getDishTypeEmoji(type)} $type (${dishesInType.size}) ----",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                     
                     items(
