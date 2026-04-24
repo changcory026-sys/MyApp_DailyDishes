@@ -17,12 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items // 👈 必须添加这个导入，否则 items(List) 无法识别
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,6 +68,7 @@ fun DailyDishScreen(
     viewModel: DailyDishViewModel = hiltViewModel(),
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     onNaviToAddDailyDishScreen: (mealDate: String) -> Unit,
+    onNaviToTodayIngredientListScreen: (mealDate: String) -> Unit,
 ) {
     val selectedDate by viewModel.selectedDateText.collectAsStateWithLifecycle()
     val dailyDishes by viewModel.dailyDishes.collectAsStateWithLifecycle()
@@ -79,6 +81,14 @@ fun DailyDishScreen(
             topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text(stringResource(R.string.title_dailydish)) },
+                    navigationIcon = {
+                        IconButton(onClick = { onNaviToTodayIngredientListScreen(selectedDate) }) {
+                            Icon(
+                                imageVector = Icons.Filled.ShoppingBasket,
+                                contentDescription = "今日食材清单"
+                            )
+                        }
+                    },
                     actions = {
                         IconButton(onClick = { shareMenu(context, selectedDate, dailyDishes) }) {
                             Icon(imageVector = Icons.Default.Share, contentDescription = "分享")
@@ -155,7 +165,7 @@ fun DailyDishListScreen(
                 }
                 items(
                     items = dishesInPeriod,
-                    key = { dish -> "${period}_${dish.dishId}" } // 复合 key 保证同一菜不同时段不冲突
+                    key = { dish -> "${period}_${dish.dishId}" }
                 ) { dish ->
                     SwipeRevealItem(
                         menuWidth = 64.dp,
@@ -183,8 +193,7 @@ fun DailyDishListScreen(
                         content = {
                             DishCard(
                                 dish = dish,
-                                modifier = Modifier.fillMaxWidth(),
-                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen // 👈 修正参数名
                             )
                         }
                     )

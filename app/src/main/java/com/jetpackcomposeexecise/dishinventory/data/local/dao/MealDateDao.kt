@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishWithIngredientsAndMealTime
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishWithMealTime
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateDishCrossRef
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateEntity
@@ -28,6 +29,16 @@ interface MealDateDao {
         WHERE ref.mealDate = :date
     """)
     fun getDishesWithMealTimeByDate(date: String): Flow<List<DishWithMealTime>>
+
+    // 新增：查询某天的所有菜及其关联的食材 (用于今日食材清单页)
+    @Transaction
+    @Query("""
+        SELECT d.*, ref.mealTime 
+        FROM dish_table d
+        JOIN meal_date_dish_cross_ref ref ON d.dishId = ref.dishId
+        WHERE ref.mealDate = :date
+    """)
+    fun getDishesWithIngredientsAndMealTimeByDate(date: String): Flow<List<DishWithIngredientsAndMealTime>>
 
     // 插入一个日期记录
     @Insert(onConflict = OnConflictStrategy.IGNORE)

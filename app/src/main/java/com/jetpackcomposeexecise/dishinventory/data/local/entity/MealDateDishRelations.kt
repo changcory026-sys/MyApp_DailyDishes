@@ -26,6 +26,23 @@ data class DishWithMealTime(
     val mealTime: String
 )
 
+// 包含食材和用餐时段信息的包装类，用于今日食材清单页
+data class DishWithIngredientsAndMealTime(
+    @Embedded val dish: DishEntity,
+    val mealTime: String,
+    @Relation(
+        entity = IngredientEntity::class,
+        parentColumn = "dishId",
+        entityColumn = "ingredientId",
+        associateBy = Junction(
+            value = DishIngredientCrossRef::class,
+            parentColumn = "dishId",
+            entityColumn = "ingredientId"
+        )
+    )
+    val ingredients: List<IngredientEntity>
+)
+
 // 联合查询打包类
 data class MealDateWithDishes(
     @Embedded val mealDate: MealDateEntity,

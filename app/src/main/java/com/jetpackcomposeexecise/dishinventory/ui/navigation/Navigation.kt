@@ -42,6 +42,7 @@ import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredie
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientlist.IngredientListScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.todayingredientlist.TodayIngredientListScreen // 👈 准备导入
 import kotlinx.serialization.Serializable
 
 //1.定义页面 Route
@@ -70,10 +71,13 @@ data class DishDetailsRoute(val dishId: Long)
 object AddIngredientRoute
 
 @Serializable
-data class EditIngredientRoute(val ingredientId: Long) // 👈 修正参数名为 ingredientId
+data class EditIngredientRoute(val ingredientId: Long)
 
 @Serializable
 data class IngredientDetailsRoute(val ingredientId: Long)
+
+@Serializable
+data class TodayIngredientListRoute(val mealDate: String) // 👈 新增路由
 
 //2. 定义主页底部Tab的数据结构
 data class BottomTabItem<T : Any>(
@@ -87,21 +91,9 @@ data class BottomTabItem<T : Any>(
 @Composable
 fun MyDailyDishApp() {
     val bottomTabItems = listOf(
-        BottomTabItem(
-            stringResource(R.string.bottom_dailydish),
-            Icons.Default.Restaurant,
-            DailyDishesRoute
-        ),
-        BottomTabItem(
-            stringResource(R.string.bottom_dishes),
-            Icons.Default.MenuBook,
-            DishListRoute
-        ),
-        BottomTabItem(
-            stringResource(R.string.bottom_ingredient),
-            Icons.Default.ShoppingBasket,
-            IngredientListRoute
-        )
+        BottomTabItem(stringResource(R.string.bottom_dailydish), Icons.Default.Restaurant, DailyDishesRoute),
+        BottomTabItem(stringResource(R.string.bottom_dishes), Icons.Default.MenuBook, DishListRoute),
+        BottomTabItem(stringResource(R.string.bottom_ingredient), Icons.Default.ShoppingBasket, IngredientListRoute)
     )
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -144,59 +136,32 @@ fun MyDailyDishApp() {
             // DailyDishes
             composable<DailyDishesRoute> {
                 DailyDishScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
-                    onNaviToAddDailyDishScreen = { mealDate ->
-                        navController.navigate(
-                            AddDailyDishRoute(mealDate)
-                        )
-                    },
-                    onNaviToDishDetailsScreen = { dishId ->
-                        navController.navigate(
-                            DishDetailsRoute(
-                                dishId
-                            )
-                        )
-                    }
+                    modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
+                    onNaviToAddDailyDishScreen = { mealDate -> navController.navigate(AddDailyDishRoute(mealDate)) },
+                    onNaviToDishDetailsScreen = { dishId -> navController.navigate(DishDetailsRoute(dishId)) },
+                    onNaviToTodayIngredientListScreen = { mealDate -> navController.navigate(TodayIngredientListRoute(mealDate)) } // 👈 对接
                 )
             }
             // DishList
             composable<DishListRoute> {
                 DishListScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
                     onNaviToAddDishScreen = { navController.navigate(AddDishRoute) },
-                    onNaviToDishDetailsScreen = { dishId ->
-                        navController.navigate(
-                            DishDetailsRoute(
-                                dishId
-                            )
-                        )
-                    }
+                    onNaviToDishDetailsScreen = { dishId -> navController.navigate(DishDetailsRoute(dishId)) }
                 )
             }
             // IngredientList
             composable<IngredientListRoute> {
                 IngredientListScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
                     onNaviToAddIngredientScreen = { navController.navigate(AddIngredientRoute) },
-                    onNaviToIngredientDetailsScreen = { ingredientId ->
-                        navController.navigate(
-                            IngredientDetailsRoute(ingredientId)
-                        )
-                    }
+                    onNaviToIngredientDetailsScreen = { ingredientId -> navController.navigate(IngredientDetailsRoute(ingredientId)) }
                 )
             }
             // AddDailyDish
             composable<AddDailyDishRoute> {
                 AddDailyDish(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
                     navigateUp = { navController.navigateUp() },
                 )
             }
@@ -204,9 +169,7 @@ fun MyDailyDishApp() {
             composable<AddDishRoute> {
                 val viewModel: AddDishViewModel = hiltViewModel()
                 AddDishScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
                     onSaveBtnClick = { viewModel.addDishItem { navController.popBackStack() } }
@@ -217,9 +180,7 @@ fun MyDailyDishApp() {
                 val viewModel: DishDetailsViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 DishDetailsScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     uiState = uiState,
                     dishId = viewModel.dishId,
                     navigateUp = { navController.navigateUp() },
@@ -231,9 +192,7 @@ fun MyDailyDishApp() {
             composable<EditDishRoute> {
                 val viewModel: EditDishViewModel = hiltViewModel()
                 EditDishScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
                     onSaveBtnClick = { viewModel.updateDishItem { navController.popBackStack() } }
@@ -261,7 +220,7 @@ fun MyDailyDishApp() {
                     }
                 )
             }
-            // EditIngredient 👈 新增：注册食材编辑页
+            // EditIngredient
             composable<EditIngredientRoute> {
                 val viewModel: EditIngredientViewModel = hiltViewModel()
                 EditIngredientScreen(
@@ -269,6 +228,13 @@ fun MyDailyDishApp() {
                     viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
                     onSaveSuccess = { navController.popBackStack() }
+                )
+            }
+            // 今日食材清单页 👈 新增
+            composable<TodayIngredientListRoute> {
+                TodayIngredientListScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    navigateUp = { navController.navigateUp() }
                 )
             }
         }
