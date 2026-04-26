@@ -3,6 +3,7 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,9 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items // 👈 必须添加这个导入，否则 items(List) 无法识别
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
@@ -38,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,6 +63,7 @@ import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateDishCrossRef
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist.DishCard
 import com.jetpackcomposeexecise.dishinventory.ui.utils.SwipeRevealItem
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,11 +73,17 @@ fun DailyDishScreen(
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     onNaviToAddDailyDishScreen: (mealDate: String) -> Unit,
     onNaviToTodayIngredientListScreen: (mealDate: String) -> Unit,
+    onNaviToGenerateMenuScreen: (mealDate: String) -> Unit,
 ) {
     val selectedDate by viewModel.selectedDateText.collectAsStateWithLifecycle()
     val dailyDishes by viewModel.dailyDishes.collectAsStateWithLifecycle()
     val dateOptions by viewModel.dateOptions.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    val isFutureOrToday = remember(selectedDate) {
+        val today = LocalDate.now().toString()
+        selectedDate >= today
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -97,8 +107,22 @@ fun DailyDishScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
-                    Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Item")
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (isFutureOrToday) {
+                        SmallFloatingActionButton(
+                            onClick = { onNaviToGenerateMenuScreen(selectedDate) },
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        ) {
+                            Icon(imageVector = Icons.Default.Casino, contentDescription = "随机生成今日菜单")
+                        }
+                    }
+                    FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
+                        Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Item")
+                    }
                 }
             }
         ) { innerpadding ->
@@ -137,6 +161,7 @@ fun DailyDishScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DailyDishListScreen(
     allDishes: Map<String, List<DishEntity>>,
@@ -151,17 +176,29 @@ fun DailyDishListScreen(
         MealDateDishCrossRef.mealTimeOptions.forEach { period ->
             val dishesInPeriod = allDishes[period] ?: emptyList()
             if (dishesInPeriod.isNotEmpty()) {
-                item(key = "header_$period") {
-                    Text(
-                        text = "---- $period ----",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
+                stickyHeader(key = "header_$period") {
+                    val timeIcon = when (period) {
+                        "早饭" -> "🌅"
+                        "中饭" -> "☀️"
+                        "下午茶" -> "🍵"
+                        "晚饭" -> "🌙"
+                        else -> "🌑"
+                    }
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(vertical = 8.dp)
-                    )
+                    ) {
+                        Text(
+                            text = "---- $timeIcon $period ----",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 items(
                     items = dishesInPeriod,
@@ -193,7 +230,7 @@ fun DailyDishListScreen(
                         content = {
                             DishCard(
                                 dish = dish,
-                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen // 👈 修正参数名
+                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen
                             )
                         }
                     )
@@ -277,7 +314,14 @@ private fun shareMenu(context: Context, date: String, dishesMap: Map<String, Lis
     MealDateDishCrossRef.mealTimeOptions.forEach { period ->
         val dishes = dishesMap[period] ?: emptyList()
         if (dishes.isNotEmpty()) {
-            shareContent.append("【$period】\n")
+            val timeIcon = when (period) {
+                "早饭" -> "🌅"
+                "中饭" -> "☀️"
+                "下午茶" -> "🍵"
+                "晚饭" -> "🌙"
+                else -> "🌑"
+            }
+            shareContent.append("$timeIcon 【$period】\n")
             dishes.forEach { shareContent.append(" - ${it.name}\n") }
             shareContent.append("\n")
         }

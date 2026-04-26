@@ -16,12 +16,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MealDateDao {
 
-    // 查询某天的所有菜。必须加 @Transaction
     @Transaction
     @Query("SELECT * FROM meal_dates WHERE mealDate = :date")
     fun getMealDateWithDishesByDate(date: String): Flow<MealDateWithDishes?>
 
-    // 新增：查询某天的所有菜及其用餐时段 (JOIN 查询)
     @Query("""
         SELECT d.*, ref.mealTime 
         FROM dish_table d
@@ -30,7 +28,6 @@ interface MealDateDao {
     """)
     fun getDishesWithMealTimeByDate(date: String): Flow<List<DishWithMealTime>>
 
-    // 新增：查询某天的所有菜及其关联的食材 (用于今日食材清单页)
     @Transaction
     @Query("""
         SELECT d.*, ref.mealTime 
@@ -40,19 +37,25 @@ interface MealDateDao {
     """)
     fun getDishesWithIngredientsAndMealTimeByDate(date: String): Flow<List<DishWithIngredientsAndMealTime>>
 
-    // 插入一个日期记录
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMealDate(mealDate: MealDateEntity)
 
-    //增：给某天绑定一道菜(插入交叉表)
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMealDateDishCrossRef(crossRef: MealDateDishCrossRef)
 
-    //删：移除交叉表中的特定记录 (日期+菜品+时段)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMealDateDishCrossRefs(crossRefs: List<MealDateDishCrossRef>)
+
+    // 👈 核心改进：真正的原子化保存事务
+    @Transaction
+    suspend fun insertDishesForDateAtomic(date: String, crossRefs: List<MealDateDishCrossRef>) {
+        insertMealDate(MealDateEntity(date))
+        insertMealDateDishCrossRefs(crossRefs)
+    }
+
     @Delete
     suspend fun deleteMealDateDishCrossRef(crossRef: MealDateDishCrossRef)
 
-    //删：根据日期、菜品 ID 和时段删除关联
     @Query("DELETE FROM meal_date_dish_cross_ref WHERE mealDate = :date AND dishId = :dishId AND mealTime = :mealTime")
     suspend fun deleteDishFromDate(date: String, dishId: Long, mealTime: String)
 }

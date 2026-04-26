@@ -36,15 +36,24 @@ class DailyDishViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // 联动数据库查询：实时显示当前的菜单，按 mealTime 分组
+    // 联动数据库查询：实时显示当前的菜单，按 mealTime 分组，且组内按菜品类型排序
     @OptIn(ExperimentalCoroutinesApi::class)
     val dailyDishes: StateFlow<Map<String, List<DishEntity>>> = _selectedDate
         .flatMapLatest { date ->
             repository.getDishesWithMealTimeByDate(date.toString()).map { list ->
-                list.groupBy(
+                // 1. 先按 mealTime 分组
+                val grouped = list.groupBy(
                     keySelector = { it.mealTime },
                     valueTransform = { it.dish }
                 )
+                
+                // 2. 👈 核心改进：对每个分组内的菜品按 DishEntity.typeOptions 顺序进行排序
+                grouped.mapValues { (_, dishes) ->
+                    dishes.sortedBy { dish ->
+                        val index = DishEntity.typeOptions.indexOf(dish.type)
+                        if (index == -1) Int.MAX_VALUE else index
+                    }
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -62,7 +71,7 @@ class DailyDishViewModel @Inject constructor(
         _selectedDate.value = _selectedDate.value.plusDays(1)
     }
 
-    // 删除当天的指定菜式（增加 mealTime 参数以精确定位）
+    // 删除当天的指定菜式
     fun deleteDishFromCurrentDate(dishId: Long, mealTime: String) {
         viewModelScope.launch {
             repository.deleteDishFromDate(_selectedDate.value.toString(), dishId, mealTime)

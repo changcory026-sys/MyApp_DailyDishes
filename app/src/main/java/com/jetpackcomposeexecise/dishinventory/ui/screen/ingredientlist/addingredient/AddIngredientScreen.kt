@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -171,15 +174,14 @@ fun AddIngredientContent(
         Column(
             modifier = modifier
                 .padding(innerPadding)
-                .padding(
-                    top = dimensionResource(R.dimen.padding_large),
-                    start = dimensionResource(R.dimen.padding_medium),
-                    end = dimensionResource(R.dimen.padding_medium)
-                ),
+                .padding(horizontal = dimensionResource(R.dimen.padding_medium))
+                .verticalScroll(rememberScrollState()), // 👈 适配横屏滑动
             verticalArrangement = Arrangement.spacedBy(
                 dimensionResource(R.dimen.padding_large)
             )
         ) {
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+            
             // Name
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
@@ -239,7 +241,8 @@ fun AddIngredientContent(
             )
 
             Text(text = stringResource(id = R.string.required_fields))
-            Spacer(modifier = Modifier.weight(1.0f))
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 modifier = Modifier

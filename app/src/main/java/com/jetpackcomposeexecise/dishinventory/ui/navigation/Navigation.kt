@@ -42,7 +42,9 @@ import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredie
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientlist.IngredientListScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.todayingredientlist.TodayIngredientListScreen // 👈 准备导入
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.todayingredientlist.TodayIngredientListScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.generatemenu.GenerateMenuScreen
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.recommendmenu.RecommendMenuScreen
 import kotlinx.serialization.Serializable
 
 //1.定义页面 Route
@@ -77,7 +79,17 @@ data class EditIngredientRoute(val ingredientId: Long)
 data class IngredientDetailsRoute(val ingredientId: Long)
 
 @Serializable
-data class TodayIngredientListRoute(val mealDate: String) // 👈 新增路由
+data class TodayIngredientListRoute(val mealDate: String)
+
+@Serializable
+data class GenerateMenuRoute(val mealDate: String)
+
+@Serializable
+data class RecommendMenuRoute(
+    val mealDate: String,
+    val mealTime: String,
+    val configJson: String
+)
 
 //2. 定义主页底部Tab的数据结构
 data class BottomTabItem<T : Any>(
@@ -133,16 +145,15 @@ fun MyDailyDishApp() {
             navController = navController,
             startDestination = DailyDishesRoute
         ) {
-            // DailyDishes
             composable<DailyDishesRoute> {
                 DailyDishScreen(
                     modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
                     onNaviToAddDailyDishScreen = { mealDate -> navController.navigate(AddDailyDishRoute(mealDate)) },
                     onNaviToDishDetailsScreen = { dishId -> navController.navigate(DishDetailsRoute(dishId)) },
-                    onNaviToTodayIngredientListScreen = { mealDate -> navController.navigate(TodayIngredientListRoute(mealDate)) } // 👈 对接
+                    onNaviToTodayIngredientListScreen = { mealDate -> navController.navigate(TodayIngredientListRoute(mealDate)) },
+                    onNaviToGenerateMenuScreen = { mealDate -> navController.navigate(GenerateMenuRoute(mealDate)) }
                 )
             }
-            // DishList
             composable<DishListRoute> {
                 DishListScreen(
                     modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
@@ -150,7 +161,6 @@ fun MyDailyDishApp() {
                     onNaviToDishDetailsScreen = { dishId -> navController.navigate(DishDetailsRoute(dishId)) }
                 )
             }
-            // IngredientList
             composable<IngredientListRoute> {
                 IngredientListScreen(
                     modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
@@ -158,14 +168,12 @@ fun MyDailyDishApp() {
                     onNaviToIngredientDetailsScreen = { ingredientId -> navController.navigate(IngredientDetailsRoute(ingredientId)) }
                 )
             }
-            // AddDailyDish
             composable<AddDailyDishRoute> {
                 AddDailyDish(
                     modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding()),
                     navigateUp = { navController.navigateUp() },
                 )
             }
-            // AddDish
             composable<AddDishRoute> {
                 val viewModel: AddDishViewModel = hiltViewModel()
                 AddDishScreen(
@@ -175,7 +183,6 @@ fun MyDailyDishApp() {
                     onSaveBtnClick = { viewModel.addDishItem { navController.popBackStack() } }
                 )
             }
-            // DishDetails
             composable<DishDetailsRoute> {
                 val viewModel: DishDetailsViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -188,7 +195,6 @@ fun MyDailyDishApp() {
                     onDeleteBtnClick = { viewModel.deleteDish { navController.popBackStack() } }
                 )
             }
-            // EditDish
             composable<EditDishRoute> {
                 val viewModel: EditDishViewModel = hiltViewModel()
                 EditDishScreen(
@@ -198,7 +204,6 @@ fun MyDailyDishApp() {
                     onSaveBtnClick = { viewModel.updateDishItem { navController.popBackStack() } }
                 )
             }
-            // AddIngredient
             composable<AddIngredientRoute> {
                 val viewModel: AddIngredientViewModel = hiltViewModel()
                 AddIngredientScreen(
@@ -208,7 +213,6 @@ fun MyDailyDishApp() {
                     onSaveSuccess = { navController.popBackStack() }
                 )
             }
-            // IngredientDetails
             composable<IngredientDetailsRoute> {
                 val viewModel: IngredientDetailsViewModel = hiltViewModel()
                 IngredientDetailsScreen(
@@ -220,7 +224,6 @@ fun MyDailyDishApp() {
                     }
                 )
             }
-            // EditIngredient
             composable<EditIngredientRoute> {
                 val viewModel: EditIngredientViewModel = hiltViewModel()
                 EditIngredientScreen(
@@ -230,11 +233,26 @@ fun MyDailyDishApp() {
                     onSaveSuccess = { navController.popBackStack() }
                 )
             }
-            // 今日食材清单页 👈 新增
             composable<TodayIngredientListRoute> {
                 TodayIngredientListScreen(
                     modifier = Modifier.fillMaxSize(),
                     navigateUp = { navController.navigateUp() }
+                )
+            }
+            composable<GenerateMenuRoute> {
+                GenerateMenuScreen(
+                    navigateUp = { navController.navigateUp() },
+                    onNavigateToRecommend = { date, time, json ->
+                        navController.navigate(RecommendMenuRoute(date, time, json))
+                    }
+                )
+            }
+            composable<RecommendMenuRoute> {
+                RecommendMenuScreen(
+                    navigateUp = { navController.navigateUp() },
+                    onSaveComplete = {
+                        navController.popBackStack(DailyDishesRoute, inclusive = false)
+                    }
                 )
             }
         }

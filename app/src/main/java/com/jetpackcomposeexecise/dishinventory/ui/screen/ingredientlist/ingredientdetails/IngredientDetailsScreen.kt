@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -38,7 +41,7 @@ fun IngredientDetailsScreen(
     modifier: Modifier = Modifier,
     viewModel: IngredientDetailsViewModel = hiltViewModel(),
     navigateUp: () -> Unit,
-    onNavToIngredientEditScreen: (Long) -> Unit, // 👈 确保参数名与 Navigation.kt 一致
+    onNavToIngredientEditScreen: (Long) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ingredientId = viewModel.ingredientId
@@ -46,7 +49,7 @@ fun IngredientDetailsScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.title_ingredient_details)) }, // 👈 修正标题
+                title = { Text(stringResource(id = R.string.title_ingredient_details)) },
                 navigationIcon = {
                     IconButton(onClick = navigateUp) {
                         Icon(
@@ -61,21 +64,21 @@ fun IngredientDetailsScreen(
         Column(
             modifier = modifier
                 .padding(innerPadding)
-                .padding(
-                    bottom = dimensionResource(R.dimen.padding_large),
-                    start = dimensionResource(R.dimen.padding_medium),
-                    end = dimensionResource(R.dimen.padding_medium),
-                ),
+                .padding(horizontal = dimensionResource(R.dimen.padding_medium))
+                .verticalScroll(rememberScrollState()), // 👈 关键修复：适配横屏滑动
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium))
         ) {
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_small)))
+
             if (uiState != null) {
                 IngredientItemCard(uiState!!)
-                Spacer(modifier = Modifier.weight(1.0f))
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 // Edit 按钮
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onNavToIngredientEditScreen(ingredientId) }, // 👈 触发跳转
+                    onClick = { onNavToIngredientEditScreen(ingredientId) },
                     shape = MaterialTheme.shapes.small,
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -94,8 +97,9 @@ fun IngredientDetailsScreen(
                 ) {
                     Text(text = stringResource(id = R.string.delete))
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             } else {
-                // 如果找不到数据
                 Text(text = "未找到该食材的信息")
             }
         }

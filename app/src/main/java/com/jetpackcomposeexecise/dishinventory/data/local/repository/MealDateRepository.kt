@@ -13,11 +13,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 
-@Singleton // 👈 确保 Repository 是单例，以便在内存中保存勾选状态
+@Singleton
 class MealDateRepository @Inject constructor(
     private val dao: MealDateDao
 ) {
-    // 内存缓存：记录每个日期下已勾选的食材 ID 👈
     private val _checkedIngredientsMap = MutableStateFlow<Map<String, Set<Long>>>(emptyMap())
     val checkedIngredientsMap = _checkedIngredientsMap.asStateFlow()
 
@@ -33,7 +32,6 @@ class MealDateRepository @Inject constructor(
         return dao.getDishesWithIngredientsAndMealTimeByDate(date)
     }
 
-    // 切换勾选状态逻辑 👈
     fun toggleIngredientChecked(date: String, ingredientId: Long) {
         _checkedIngredientsMap.update { currentMap ->
             val newMap = currentMap.toMutableMap()
@@ -53,6 +51,13 @@ class MealDateRepository @Inject constructor(
     suspend fun addDishToDate(date: String, dishId: Long, mealTime: String) {
         dao.insertMealDate(MealDateEntity(date))
         dao.insertMealDateDishCrossRef(MealDateDishCrossRef(date, dishId, mealTime))
+    }
+
+    // 👈 补全：批量向指定日期添加菜品
+    suspend fun addDishesToDate(date: String, crossRefs: List<MealDateDishCrossRef>) {
+        if (crossRefs.isEmpty()) return
+        dao.insertMealDate(MealDateEntity(date))
+        dao.insertMealDateDishCrossRefs(crossRefs)
     }
 
     suspend fun deleteDishFromDate(date: String, dishId: Long, mealTime: String) {
