@@ -25,6 +25,9 @@ interface DishDao {
     fun getAllDishes(): Flow<List<DishEntity>>
     @Query("SELECT * FROM dish_table WHERE dishId = :id")
     fun getDishById(id: Long): Flow<DishEntity?>
+    @Query("SELECT EXISTS(SELECT 1 FROM dish_table WHERE name = :name LIMIT 1)")
+    suspend fun isNameExists(name: String): Boolean
+
     //改
     @Update
     suspend fun update(dish: DishEntity)

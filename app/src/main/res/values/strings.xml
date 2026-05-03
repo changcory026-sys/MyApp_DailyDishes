@@ -45,5 +45,6 @@
 
     <string name="title_ingredient_details">食材详情</string>
 
-
+    <string name="dish_already_exists">该菜式已存在</string>
+    <string name="ingredient_already_exists">该食材已存在</string>
 </resources>

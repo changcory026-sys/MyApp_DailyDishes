@@ -20,6 +20,9 @@ class DishRepository @Inject constructor(
     fun getDishById(id: Long): Flow<DishEntity?> =
         dishDao.getDishById(id)
 
+    // 检查菜名是否存在
+    suspend fun isNameExists(name: String): Boolean = dishDao.isNameExists(name)
+
     //插入新菜式
     suspend fun insert(dishItem: DishEntity){
         dishDao.insert(dishItem)

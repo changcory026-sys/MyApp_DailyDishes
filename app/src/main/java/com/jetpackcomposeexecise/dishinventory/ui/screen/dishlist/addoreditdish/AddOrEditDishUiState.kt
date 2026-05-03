@@ -6,7 +6,7 @@ data class AddOrEditDishUiState(
     val name: String = "",
     val time: String = "10",
     val type: String = "小炒",
-    val medicine: String = "温补", //药性：温补、寒凉…
+    val medicine: String = "碳水", //营养物质
     val womanPeriod: String = "全周期", //黄体期、卵泡期……
     val selectedIngredients: List<IngredientEntity> = emptyList() // 已选食材列表
 ){

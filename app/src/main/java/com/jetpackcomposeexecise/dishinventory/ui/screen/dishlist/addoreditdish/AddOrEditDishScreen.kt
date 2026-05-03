@@ -1,5 +1,6 @@
 package com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,12 +31,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,8 +50,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
+import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.adddish.AddDishEvent
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.adddish.AddDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.editdish.EditDishViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 //AddDish界面
 @Composable
@@ -56,10 +61,22 @@ fun AddDishScreen(
     modifier: Modifier = Modifier,
     viewModel: AddDishViewModel = hiltViewModel(),
     navigateUp: () -> Unit,
-    onSaveBtnClick: () -> Unit,
+    onSaveSuccess: () -> Unit,
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val allIngredients by viewModel.allIngredients.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val duplicateMsg = stringResource(R.string.dish_already_exists)
+
+    LaunchedEffect(viewModel.uiEvent) {
+        viewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is AddDishEvent.ShowDuplicateNameToast -> {
+                    Toast.makeText(context, duplicateMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     AddOrEditDishContent(
         modifier = modifier,
@@ -67,7 +84,7 @@ fun AddDishScreen(
         navigateUp = navigateUp,
         uiState = uiState,
         allIngredients = allIngredients,
-        onSaveBtnClick = onSaveBtnClick,
+        onSaveBtnClick = { viewModel.addDishItem(onSaveSuccess) },
         onNameChanged = viewModel::updateName,
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,
@@ -85,7 +102,7 @@ fun EditDishScreen(
     modifier: Modifier = Modifier,
     viewModel: EditDishViewModel = hiltViewModel(),
     navigateUp: () -> Unit,
-    onSaveBtnClick: () -> Unit,
+    onSaveSuccess: () -> Unit,
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val allIngredients by viewModel.allIngredients.collectAsStateWithLifecycle()
@@ -96,7 +113,7 @@ fun EditDishScreen(
         navigateUp = navigateUp,
         uiState = uiState,
         allIngredients = allIngredients,
-        onSaveBtnClick = onSaveBtnClick,
+        onSaveBtnClick = { viewModel.updateDishItem(onSaveSuccess) },
         onNameChanged = viewModel::updateName,
         onPriceChanged = viewModel::updatePrice,
         onTypeChanged = viewModel::updateType,

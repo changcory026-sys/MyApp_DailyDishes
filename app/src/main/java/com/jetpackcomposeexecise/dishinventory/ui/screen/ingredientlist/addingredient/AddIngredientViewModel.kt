@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
 import com.jetpackcomposeexecise.dishinventory.data.local.repository.IngredientRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -20,6 +23,9 @@ class AddIngredientViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddIngredientUiState())
     val uiState: StateFlow<AddIngredientUiState> = _uiState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<AddIngredientEvent>()
+    val uiEvent: SharedFlow<AddIngredientEvent> = _uiEvent.asSharedFlow()
+
     //--------- 业务逻辑 ---------
     fun updateName(newName: String) { _uiState.update { it.copy(name = newName) } }
     fun updatePrice(newPrice: String) { _uiState.update { it.copy(price = newPrice) } }
@@ -30,9 +36,15 @@ class AddIngredientViewModel @Inject constructor(
     //保存回调
     fun addIngredientItem(onSuccess: () -> Unit) {
         viewModelScope.launch {
+            val name = _uiState.value.name.trim()
+            if (repository.isNameExists(name)) {
+                _uiEvent.emit(AddIngredientEvent.ShowDuplicateNameToast)
+                return@launch
+            }
+
             repository.insert(
                 IngredientEntity(
-                    name = _uiState.value.name,
+                    name = name,
                     price = _uiState.value.price.toDoubleOrNull() ?: 0.0,
                     type = _uiState.value.type,
                     medicine = _uiState.value.medicine,
@@ -42,4 +54,8 @@ class AddIngredientViewModel @Inject constructor(
             onSuccess()
         }
     }
+}
+
+sealed class AddIngredientEvent {
+    object ShowDuplicateNameToast : AddIngredientEvent()
 }

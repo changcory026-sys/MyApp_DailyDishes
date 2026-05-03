@@ -28,20 +28,16 @@ import androidx.navigation.compose.rememberNavController
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.adddailydish.AddDailyDish
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish.AddDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.adddish.AddDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish.DailyDishScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishdetails.DishDetailsScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishdetails.DishDetailsViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist.DishListScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish.EditDishScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.editdish.EditDishViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient.AddIngredientScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient.AddIngredientViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientdetails.IngredientDetailsScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientdetails.IngredientDetailsViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.ingredientlist.IngredientListScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientScreen
-import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.todayingredientlist.TodayIngredientListScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.generatemenu.GenerateMenuScreen
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.recommendmenu.RecommendMenuScreen
@@ -175,12 +171,10 @@ fun MyDailyDishApp() {
                 )
             }
             composable<AddDishRoute> {
-                val viewModel: AddDishViewModel = hiltViewModel()
                 AddDishScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
-                    onSaveBtnClick = { viewModel.addDishItem { navController.popBackStack() } }
+                    onSaveSuccess = { navController.popBackStack() }
                 )
             }
             composable<DishDetailsRoute> {
@@ -196,19 +190,15 @@ fun MyDailyDishApp() {
                 )
             }
             composable<EditDishRoute> {
-                val viewModel: EditDishViewModel = hiltViewModel()
                 EditDishScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
-                    onSaveBtnClick = { viewModel.updateDishItem { navController.popBackStack() } }
+                    onSaveSuccess = { navController.popBackStack() }
                 )
             }
             composable<AddIngredientRoute> {
-                val viewModel: AddIngredientViewModel = hiltViewModel()
                 AddIngredientScreen(
                     modifier = Modifier.fillMaxSize(),
-                    viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
                     onSaveSuccess = { navController.popBackStack() }
                 )
@@ -225,10 +215,8 @@ fun MyDailyDishApp() {
                 )
             }
             composable<EditIngredientRoute> {
-                val viewModel: EditIngredientViewModel = hiltViewModel()
                 EditIngredientScreen(
                     modifier = Modifier.fillMaxSize(),
-                    viewModel = viewModel,
                     navigateUp = { navController.navigateUp() },
                     onSaveSuccess = { navController.popBackStack() }
                 )

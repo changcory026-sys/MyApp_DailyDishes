@@ -17,6 +17,9 @@ class IngredientRepository @Inject constructor(
     fun getIngredientById(id: Long): Flow<IngredientEntity?> =
         ingredientDao.getIngredientById(id)
 
+    // 检查食材名是否存在
+    suspend fun isNameExists(name: String): Boolean = ingredientDao.isNameExists(name)
+
     // 插入食材
     suspend fun insert(ingredient: IngredientEntity) {
         ingredientDao.insert(ingredient)

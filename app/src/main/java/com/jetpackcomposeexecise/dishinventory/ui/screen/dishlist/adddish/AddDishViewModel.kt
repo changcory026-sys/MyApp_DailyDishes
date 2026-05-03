@@ -8,9 +8,12 @@ import com.jetpackcomposeexecise.dishinventory.data.local.repository.DishReposit
 import com.jetpackcomposeexecise.dishinventory.data.local.repository.IngredientRepository
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.addoreditdish.AddOrEditDishUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -24,6 +27,9 @@ class AddDishViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AddOrEditDishUiState())
     val uiState: StateFlow<AddOrEditDishUiState> = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<AddDishEvent>()
+    val uiEvent: SharedFlow<AddDishEvent> = _uiEvent.asSharedFlow()
 
     val allIngredients: StateFlow<List<IngredientEntity>> = ingredientRepository.allIngredients
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -65,9 +71,15 @@ class AddDishViewModel @Inject constructor(
 
     fun addDishItem(onSuccess: () -> Unit){
         viewModelScope.launch {
+            val name = _uiState.value.name.trim()
+            if (repository.isNameExists(name)) {
+                _uiEvent.emit(AddDishEvent.ShowDuplicateNameToast)
+                return@launch
+            }
+
             val dishId = repository.insertAndGetId(
                 DishEntity(
-                    name = _uiState.value.name,
+                    name = name,
                     time = _uiState.value.time,
                     type = _uiState.value.type,
                     medicine = _uiState.value.medicine,
@@ -81,4 +93,8 @@ class AddDishViewModel @Inject constructor(
             onSuccess()
         }
     }
+}
+
+sealed class AddDishEvent {
+    object ShowDuplicateNameToast : AddDishEvent()
 }

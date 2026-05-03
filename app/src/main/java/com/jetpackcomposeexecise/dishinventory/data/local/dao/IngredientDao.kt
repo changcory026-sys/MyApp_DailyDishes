@@ -27,6 +27,9 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredient_table WHERE ingredientId = :id")
     fun getIngredientById(id: Long): Flow<IngredientEntity?>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM ingredient_table WHERE name = :name LIMIT 1)")
+    suspend fun isNameExists(name: String): Boolean
+
     // 修改整个 Ingredient
     @Update
     suspend fun update(ingredient: IngredientEntity)

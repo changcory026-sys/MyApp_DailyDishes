@@ -1,5 +1,6 @@
 package com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.addingredient
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,11 +29,13 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -45,6 +48,7 @@ import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.IngredientEntity
 import com.jetpackcomposeexecise.dishinventory.ui.screen.ingredientlist.editingredient.EditIngredientViewModel
 import com.jetpackcomposeexecise.dishinventory.ui.theme.DishInventoryTheme
+import kotlinx.coroutines.flow.collectLatest
 
 // 添加食材界面
 @Composable
@@ -55,6 +59,18 @@ fun AddIngredientScreen(
     onSaveSuccess: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val duplicateMsg = stringResource(R.string.ingredient_already_exists)
+
+    LaunchedEffect(viewModel.uiEvent) {
+        viewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is AddIngredientEvent.ShowDuplicateNameToast -> {
+                    Toast.makeText(context, duplicateMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     AddIngredientContent(
         modifier = modifier,
