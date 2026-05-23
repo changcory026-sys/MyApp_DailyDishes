@@ -239,7 +239,7 @@ fun DailyDishListScreen(
         }
     }
 }
-
+//日期栏
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealDayBar(
@@ -252,7 +252,7 @@ fun MealDayBar(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
