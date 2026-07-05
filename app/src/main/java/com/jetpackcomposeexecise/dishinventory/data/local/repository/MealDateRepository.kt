@@ -63,4 +63,8 @@ class MealDateRepository @Inject constructor(
     suspend fun deleteDishFromDate(date: String, dishId: Long, mealTime: String) {
         dao.deleteDishFromDate(date, dishId, mealTime)
     }
+
+    suspend fun updateDishCompletedStatus(date: String, dishId: Long, mealTime: String, isCompleted: Boolean) {
+        dao.updateDishCompletedStatus(date, dishId, mealTime, isCompleted)
+    }
 }

@@ -2,6 +2,8 @@ package com.jetpackcomposeexecise.dishinventory.data.local.database
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.jetpackcomposeexecise.dishinventory.data.local.dao.IngredientDao
 import com.jetpackcomposeexecise.dishinventory.data.local.dao.MealDateDao
 import dagger.Module
@@ -15,6 +17,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+
+    private val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE meal_date_dish_cross_ref ADD COLUMN isCompleted INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     //构建数据库
     @Provides
     @Singleton
@@ -22,8 +31,8 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "dish_database") //存储数据的表的名字，修改后会转向另一个表来存取数据，如: fruit_database
-            .fallbackToDestructiveMigration()
+            "dish_database")
+            .addMigrations(MIGRATION_6_7)
             .build()
     }
     //构建DAO

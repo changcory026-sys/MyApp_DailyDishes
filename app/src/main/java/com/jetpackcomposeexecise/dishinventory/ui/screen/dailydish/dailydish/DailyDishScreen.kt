@@ -60,6 +60,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetpackcomposeexecise.dishinventory.R
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishWithMealTime
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.MealDateDishCrossRef
 import com.jetpackcomposeexecise.dishinventory.ui.screen.dishlist.dishlist.DishCard
 import com.jetpackcomposeexecise.dishinventory.ui.utils.SwipeRevealItem
@@ -85,77 +86,69 @@ fun DailyDishScreen(
         selectedDate >= today
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = modifier,
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text(stringResource(R.string.title_dailydish)) },
-                    navigationIcon = {
-                        IconButton(onClick = { onNaviToTodayIngredientListScreen(selectedDate) }) {
-                            Icon(
-                                imageVector = Icons.Filled.ShoppingBasket,
-                                contentDescription = "今日食材清单"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { shareMenu(context, selectedDate, dailyDishes) }) {
-                            Icon(imageVector = Icons.Default.Share, contentDescription = "分享")
-                        }
-                    }
-                )
-            },
-            floatingActionButton = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (isFutureOrToday) {
-                        SmallFloatingActionButton(
-                            onClick = { onNaviToGenerateMenuScreen(selectedDate) },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.secondary
-                        ) {
-                            Icon(imageVector = Icons.Default.Casino, contentDescription = "随机生成今日菜单")
-                        }
-                    }
-                    FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
-                        Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Item")
-                    }
-                }
-            }
-        ) { innerpadding ->
-            Scaffold(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerpadding.calculateTopPadding()),
-                topBar = {
-                    MealDayBar(
-                        selectedDate = selectedDate,
-                        onYesterdayBtnClick = { viewModel.moveStepBack() },
-                        onTomorrowBtnClick = { viewModel.moveStepForward() },
-                        dateOptions = dateOptions,
-                        onDateSelected = { viewModel.onDateSelected(it) }
-                    )
-                },
-            ) { innerpadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = innerpadding.calculateTopPadding())
-                ) {
-                    if (dailyDishes.isEmpty()) {
-                        DailyDishEmptyScreen(modifier = Modifier.fillMaxSize())
-                    } else {
-                        DailyDishListScreen(
-                            allDishes = dailyDishes,
-                            onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
-                            removeDishFromCurrentDate = viewModel::deleteDishFromCurrentDate,
-                            modifier = Modifier.fillMaxSize()
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(stringResource(R.string.title_dailydish)) },
+                navigationIcon = {
+                    IconButton(onClick = { onNaviToTodayIngredientListScreen(selectedDate) }) {
+                        Icon(
+                            imageVector = Icons.Filled.ShoppingBasket,
+                            contentDescription = "今日食材清单"
                         )
                     }
+                },
+                actions = {
+                    IconButton(onClick = { shareMenu(context, selectedDate, dailyDishes) }) {
+                        Icon(imageVector = Icons.Default.Share, contentDescription = "分享")
+                    }
                 }
+            )
+        },
+        floatingActionButton = {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (isFutureOrToday) {
+                    SmallFloatingActionButton(
+                        onClick = { onNaviToGenerateMenuScreen(selectedDate) },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ) {
+                        Icon(imageVector = Icons.Default.Casino, contentDescription = "随机生成今日菜单")
+                    }
+                }
+                FloatingActionButton(onClick = { onNaviToAddDailyDishScreen(selectedDate) }) {
+                    Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Item")
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            MealDayBar(
+                selectedDate = selectedDate,
+                onYesterdayBtnClick = { viewModel.moveStepBack() },
+                onTomorrowBtnClick = { viewModel.moveStepForward() },
+                dateOptions = dateOptions,
+                onDateSelected = { viewModel.onDateSelected(it) }
+            )
+
+            if (dailyDishes.isEmpty()) {
+                DailyDishEmptyScreen(modifier = Modifier.weight(1f).fillMaxWidth())
+            } else {
+                DailyDishListScreen(
+                    allDishes = dailyDishes,
+                    onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                    removeDishFromCurrentDate = viewModel::deleteDishFromCurrentDate,
+                    onDishCompletedChanged = viewModel::updateDishCompletedStatus,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                )
             }
         }
     }
@@ -164,9 +157,10 @@ fun DailyDishScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DailyDishListScreen(
-    allDishes: Map<String, List<DishEntity>>,
+    allDishes: Map<String, List<DishWithMealTime>>,
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
     removeDishFromCurrentDate: (dishId: Long, mealTime: String) -> Unit,
+    onDishCompletedChanged: (dishId: Long, mealTime: String, isCompleted: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -202,35 +196,47 @@ fun DailyDishListScreen(
                 }
                 items(
                     items = dishesInPeriod,
-                    key = { dish -> "${period}_${dish.dishId}" }
-                ) { dish ->
+                    key = { dishWithTime -> "${period}_${dishWithTime.dish.dishId}" }
+                ) { dishWithTime ->
                     SwipeRevealItem(
-                        menuWidth = 64.dp,
-                        backgroundContent = { isSliding ->
-                            val backgroundColor by animateColorAsState(
-                                targetValue = if (isSliding) MaterialTheme.colorScheme.errorContainer else Color.Transparent,
-                                label = "deleteBg"
-                            )
+                        leftDragMax = 64.dp,
+                        rightMenuWidth = 64.dp,
+                        isDone = dishWithTime.isCompleted,
+                        onDoneChanged = { isCompleted ->
+                            onDishCompletedChanged(dishWithTime.dish.dishId, period, isCompleted)
+                        },
+                        backgroundContent = { isSlidingLeft ->
                             Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(64.dp)
-                                    .background(backgroundColor),
-                                contentAlignment = Alignment.Center
+                                modifier = Modifier.fillMaxSize()
                             ) {
-                                IconButton(onClick = { removeDishFromCurrentDate(dish.dishId, period) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
+                                // 左滑时在右侧显示的删除背景
+                                val deleteColor by animateColorAsState(
+                                    targetValue = if (isSlidingLeft) MaterialTheme.colorScheme.errorContainer else Color.Transparent,
+                                    label = "deleteBg"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(64.dp)
+                                        .background(deleteColor)
+                                        .align(Alignment.CenterEnd),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    IconButton(onClick = { removeDishFromCurrentDate(dishWithTime.dish.dishId, period) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 }
                             }
                         },
                         content = {
                             DishCard(
-                                dish = dish,
-                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen
+                                dish = dishWithTime.dish,
+                                onNaviToDishDetailsScreen = onNaviToDishDetailsScreen,
+                                textDecoration = if (dishWithTime.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
                             )
                         }
                     )
@@ -309,7 +315,7 @@ fun DailyDishEmptyScreen(modifier: Modifier) {
     }
 }
 
-private fun shareMenu(context: Context, date: String, dishesMap: Map<String, List<DishEntity>>) {
+private fun shareMenu(context: Context, date: String, dishesMap: Map<String, List<DishWithMealTime>>) {
     val shareContent = StringBuilder("📅 $date 菜单：\n\n")
     MealDateDishCrossRef.mealTimeOptions.forEach { period ->
         val dishes = dishesMap[period] ?: emptyList()
@@ -322,7 +328,7 @@ private fun shareMenu(context: Context, date: String, dishesMap: Map<String, Lis
                 else -> "🌑"
             }
             shareContent.append("$timeIcon 【$period】\n")
-            dishes.forEach { shareContent.append(" - ${it.name}\n") }
+            dishes.forEach { shareContent.append(" - ${it.dish.name}\n") }
             shareContent.append("\n")
         }
     }

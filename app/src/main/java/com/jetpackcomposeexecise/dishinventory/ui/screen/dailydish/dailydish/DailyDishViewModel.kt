@@ -3,6 +3,7 @@ package com.jetpackcomposeexecise.dishinventory.ui.screen.dailydish.dailydish
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishEntity
+import com.jetpackcomposeexecise.dishinventory.data.local.entity.DishWithMealTime
 import com.jetpackcomposeexecise.dishinventory.data.local.repository.MealDateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,22 +39,11 @@ class DailyDishViewModel @Inject constructor(
 
     // 联动数据库查询：实时显示当前的菜单，按 mealTime 分组，且组内按菜品类型排序
     @OptIn(ExperimentalCoroutinesApi::class)
-    val dailyDishes: StateFlow<Map<String, List<DishEntity>>> = _selectedDate
+    val dailyDishes: StateFlow<Map<String, List<DishWithMealTime>>> = _selectedDate
         .flatMapLatest { date ->
             repository.getDishesWithMealTimeByDate(date.toString()).map { list ->
                 // 1. 先按 mealTime 分组
-                val grouped = list.groupBy(
-                    keySelector = { it.mealTime },
-                    valueTransform = { it.dish }
-                )
-                
-                // 2. 👈 核心改进：对每个分组内的菜品按 DishEntity.typeOptions 顺序进行排序
-                grouped.mapValues { (_, dishes) ->
-                    dishes.sortedBy { dish ->
-                        val index = DishEntity.typeOptions.indexOf(dish.type)
-                        if (index == -1) Int.MAX_VALUE else index
-                    }
-                }
+                list.groupBy { it.mealTime }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -75,6 +65,13 @@ class DailyDishViewModel @Inject constructor(
     fun deleteDishFromCurrentDate(dishId: Long, mealTime: String) {
         viewModelScope.launch {
             repository.deleteDishFromDate(_selectedDate.value.toString(), dishId, mealTime)
+        }
+    }
+
+    // 更新菜式的完成状态
+    fun updateDishCompletedStatus(dishId: Long, mealTime: String, isCompleted: Boolean) {
+        viewModelScope.launch {
+            repository.updateDishCompletedStatus(_selectedDate.value.toString(), dishId, mealTime, isCompleted)
         }
     }
 }

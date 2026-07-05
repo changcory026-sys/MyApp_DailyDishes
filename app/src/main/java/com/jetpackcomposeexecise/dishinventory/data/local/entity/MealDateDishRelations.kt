@@ -13,7 +13,8 @@ import androidx.room.Relation
 data class MealDateDishCrossRef(
     val mealDate: String,
     val dishId: Long,
-    val mealTime: String = "中饭"
+    val mealTime: String = "中饭",
+    val isCompleted: Boolean = false
 ) {
     companion object {
         val mealTimeOptions = listOf("早饭", "中饭", "下午茶", "晚饭", "宵夜")
@@ -23,7 +24,8 @@ data class MealDateDishCrossRef(
 // 包含用餐时段信息的包装类，用于 DailyDishScreen 展示
 data class DishWithMealTime(
     @Embedded val dish: DishEntity,
-    val mealTime: String
+    val mealTime: String,
+    val isCompleted: Boolean = false
 )
 
 // 包含食材和用餐时段信息的包装类，用于今日食材清单页

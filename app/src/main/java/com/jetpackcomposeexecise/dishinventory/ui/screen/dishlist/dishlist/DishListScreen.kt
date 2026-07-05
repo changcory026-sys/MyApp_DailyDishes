@@ -236,7 +236,8 @@ fun DishListNotEmptyScreen(
 fun DishCard(
     modifier: Modifier = Modifier,
     onNaviToDishDetailsScreen: (dishId: Long) -> Unit,
-    dish: DishEntity
+    dish: DishEntity,
+    textDecoration: androidx.compose.ui.text.style.TextDecoration? = null
 ) {
     Card(
         modifier = modifier,
@@ -258,16 +259,19 @@ fun DishCard(
                 Text(
                     text = dish.name,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = textDecoration
                 )
                 Text(
                     text = dish.medicine,
                     style = MaterialTheme.typography.bodyLarge,
+                    textDecoration = textDecoration
                 )
             }
             Text(
                 text = stringResource(R.string.mins, dish.time),
                 style = MaterialTheme.typography.bodyMedium,
+                textDecoration = textDecoration
             )
         }
     }

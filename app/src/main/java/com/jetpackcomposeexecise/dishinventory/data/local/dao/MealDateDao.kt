@@ -21,7 +21,7 @@ interface MealDateDao {
     fun getMealDateWithDishesByDate(date: String): Flow<MealDateWithDishes?>
 
     @Query("""
-        SELECT d.*, ref.mealTime 
+        SELECT d.*, ref.mealTime, ref.isCompleted
         FROM dish_table d
         JOIN meal_date_dish_cross_ref ref ON d.dishId = ref.dishId
         WHERE ref.mealDate = :date
@@ -58,4 +58,7 @@ interface MealDateDao {
 
     @Query("DELETE FROM meal_date_dish_cross_ref WHERE mealDate = :date AND dishId = :dishId AND mealTime = :mealTime")
     suspend fun deleteDishFromDate(date: String, dishId: Long, mealTime: String)
+
+    @Query("UPDATE meal_date_dish_cross_ref SET isCompleted = :isCompleted WHERE mealDate = :date AND dishId = :dishId AND mealTime = :mealTime")
+    suspend fun updateDishCompletedStatus(date: String, dishId: Long, mealTime: String, isCompleted: Boolean)
 }
